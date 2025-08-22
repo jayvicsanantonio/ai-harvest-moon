@@ -1,46 +1,46 @@
 # Implementation Plan
 
-- [ ] 1. Set up project foundation and core engine
-  - [ ] 1.1 Create project structure with HTML/CSS/JS modules
+- [x] 1. Set up project foundation and core engine
+  - [x] 1.1 Create project structure with HTML/CSS/JS modules
     - Set up index.html with Canvas element and basic styling
     - Create module directory structure (engine/, systems/, entities/, ui/)
     - Configure ES6 module imports and build system
     - _Requirements: 1.1, 10.7_
-  - [ ] 1.2 Implement core GameEngine with render loop
+  - [x] 1.2 Implement core GameEngine with render loop
     - Build GameEngine class with 60fps requestAnimationFrame loop
     - Add delta time calculation and frame rate monitoring
     - Implement scene management system with scene transitions
     - _Requirements: 1.1, 1.4, 10.1_
-  - [ ] 1.3 Create Canvas/WebGL rendering system
+  - [x] 1.3 Create Canvas/WebGL rendering system
     - Initialize Canvas 2D context with fallback handling
     - Implement basic sprite rendering with position transforms
     - Add viewport camera with scrolling capabilities
     - _Requirements: 1.1, 10.1, 10.4_
 
-- [ ] 2. Implement input and collision systems
-  - [ ] 2.1 Build keyboard input manager
+- [x] 2. Implement input and collision systems
+  - [x] 2.1 Build keyboard input manager
     - Create InputManager class with key state tracking
     - Implement configurable key bindings for movement and actions
     - Add input buffering for consistent frame-based input
     - _Requirements: 1.2, 1.5_
-  - [ ] 2.2 Add collision detection system
+  - [x] 2.2 Add collision detection system
     - Implement tile-based collision detection with solid/passable tiles
     - Create boundary checking for map edges and objects
     - Add collision response with position correction
     - _Requirements: 1.3, 10.4_
 
-- [ ] 3. Create player character and movement
-  - [ ] 3.1 Implement player entity with sprites
+- [x] 3. Create player character and movement
+  - [x] 3.1 Implement player entity with sprites
     - Create Player entity class with position and sprite properties
     - Load player sprite sheets with idle and walking animations
     - Implement sprite animation system with frame timing
     - _Requirements: 1.2, 10.1_
-  - [ ] 3.2 Add player movement with animations
+  - [x] 3.2 Add player movement with animations
     - Connect input to player movement with 8-directional controls
     - Implement walking animations that sync with movement direction
     - Add smooth movement interpolation between grid positions
     - _Requirements: 1.2, 1.4_
-  - [ ] 3.3 Create basic stamina system
+  - [x] 3.3 Create basic stamina system
     - Implement stamina tracking with current/max values
     - Add stamina consumption for player actions
     - Create stamina regeneration over time and through sleep
