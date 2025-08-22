@@ -1,6 +1,10 @@
 {
-  "outputStyle": "Learning",
   "permissions": {
+    "allow": [
+      "Bash(mkdir:*)",
+      "Bash(git checkout:*)"
+    ],
     "defaultMode": "acceptEdits"
-  }
+  },
+  "outputStyle": "Learning"
 }

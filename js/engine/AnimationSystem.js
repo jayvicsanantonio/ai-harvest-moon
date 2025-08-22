@@ -5,53 +5,153 @@ export class AnimationSystem {
     constructor() {
         this.animations = new Map();
         this.activeAnimations = new Map();
+        this.animationQueue = new Map(); // Queue system for chained animations
+        this.blendingAnimations = new Map(); // For animation blending/transitions
+        this.globalSpeed = 1.0; // Global animation speed multiplier
     }
     
-    // Register an animation with frames and timing
-    registerAnimation(name, frames, frameTime = 150, loop = true) {
-        this.animations.set(name, {
-            frames,
-            frameTime,
-            loop,
-            totalTime: frames.length * frameTime
-        });
+    // Register an animation with frames, timing, and advanced options
+    registerAnimation(name, options) {
+        // Support both old format and new options object
+        if (Array.isArray(options)) {
+            // Legacy format: registerAnimation(name, frames, frameTime, loop)
+            options = {
+                frames: options,
+                frameTime: arguments[2] || 150,
+                loop: arguments[3] !== undefined ? arguments[3] : true
+            };
+        }
+        
+        const animation = {
+            frames: options.frames || [],
+            frameTime: options.frameTime || 150,
+            loop: options.loop !== undefined ? options.loop : true,
+            priority: options.priority || 0,
+            blendMode: options.blendMode || 'replace', // 'replace', 'additive', 'blend'
+            events: options.events || {}, // Frame-based events: {frameIndex: callback}
+            tags: options.tags || [], // Animation tags for grouping/filtering
+            speed: options.speed || 1.0, // Animation-specific speed multiplier
+            totalTime: (options.frames || []).length * (options.frameTime || 150)
+        };
+        
+        this.animations.set(name, animation);
     }
     
-    // Start an animation for an entity
-    startAnimation(entityId, animationName, onComplete = null) {
+    // Start an animation for an entity with advanced options
+    startAnimation(entityId, animationName, options = {}) {
         const animation = this.animations.get(animationName);
         if (!animation) {
             console.warn(`Animation ${animationName} not found`);
             return false;
         }
         
-        this.activeAnimations.set(entityId, {
+        const currentActive = this.activeAnimations.get(entityId);
+        const priority = options.priority || animation.priority;
+        const force = options.force || false;
+        const queue = options.queue || false;
+        
+        // Handle priority and queueing
+        if (currentActive && !force) {
+            if (priority < currentActive.animation.priority) {
+                // Lower priority, queue it or ignore
+                if (queue) {
+                    this.queueAnimation(entityId, animationName, options);
+                }
+                return false;
+            }
+        }
+        
+        // Handle animation queuing
+        if (queue && currentActive && !currentActive.completed) {
+            this.queueAnimation(entityId, animationName, options);
+            return true;
+        }
+        
+        const activeAnimation = {
             name: animationName,
             animation,
-            currentTime: 0,
+            currentTime: options.startTime || 0,
             currentFrame: 0,
-            onComplete,
-            completed: false
-        });
+            onComplete: options.onComplete || null,
+            completed: false,
+            speed: (options.speed || 1.0) * animation.speed,
+            blendWeight: options.blendWeight || 1.0,
+            lastEventFrame: -1 // Track last fired event frame
+        };
+        
+        this.activeAnimations.set(entityId, activeAnimation);
+        
+        // Fire start event if exists
+        if (animation.events[0]) {
+            animation.events[0](entityId, 0);
+            activeAnimation.lastEventFrame = 0;
+        }
         
         return true;
     }
     
-    // Update all active animations
+    // Queue an animation to play after current one completes
+    queueAnimation(entityId, animationName, options = {}) {
+        if (!this.animationQueue.has(entityId)) {
+            this.animationQueue.set(entityId, []);
+        }
+        
+        this.animationQueue.get(entityId).push({
+            name: animationName,
+            options: options
+        });
+    }
+    
+    // Process animation queue for an entity
+    processQueue(entityId) {
+        const queue = this.animationQueue.get(entityId);
+        if (!queue || queue.length === 0) return;
+        
+        const nextAnim = queue.shift();
+        this.startAnimation(entityId, nextAnim.name, nextAnim.options);
+        
+        // Clean up empty queues
+        if (queue.length === 0) {
+            this.animationQueue.delete(entityId);
+        }
+    }
+    
+    // Update all active animations with events and improved timing
     update(deltaTime) {
+        const scaledDelta = deltaTime * this.globalSpeed;
+        
         for (const [entityId, activeAnim] of this.activeAnimations.entries()) {
-            if (activeAnim.completed) continue;
+            if (activeAnim.completed || activeAnim.paused) continue;
             
-            activeAnim.currentTime += deltaTime;
+            // Apply entity-specific speed and global speed
+            activeAnim.currentTime += scaledDelta * activeAnim.speed;
             
             // Calculate current frame
             const frameIndex = Math.floor(activeAnim.currentTime / activeAnim.animation.frameTime);
             
+            // Fire animation events
+            if (frameIndex !== activeAnim.currentFrame && frameIndex < activeAnim.animation.frames.length) {
+                // Fire events for frames we've crossed
+                for (let i = activeAnim.currentFrame + 1; i <= frameIndex; i++) {
+                    if (activeAnim.animation.events[i] && i > activeAnim.lastEventFrame) {
+                        activeAnim.animation.events[i](entityId, i);
+                        activeAnim.lastEventFrame = i;
+                    }
+                }
+            }
+            
             if (frameIndex >= activeAnim.animation.frames.length) {
                 if (activeAnim.animation.loop) {
-                    // Loop animation
+                    // Loop animation - reset timing and events
                     activeAnim.currentTime = 0;
                     activeAnim.currentFrame = 0;
+                    activeAnim.lastEventFrame = -1;
+                    
+                    // Fire start event again on loop
+                    if (activeAnim.animation.events[0]) {
+                        activeAnim.animation.events[0](entityId, 0);
+                        activeAnim.lastEventFrame = 0;
+                    }
                 } else {
                     // Animation completed
                     activeAnim.completed = true;
@@ -60,6 +160,9 @@ export class AnimationSystem {
                     if (activeAnim.onComplete) {
                         activeAnim.onComplete(entityId);
                     }
+                    
+                    // Process animation queue
+                    this.processQueue(entityId);
                 }
             } else {
                 activeAnim.currentFrame = frameIndex;
@@ -67,10 +170,15 @@ export class AnimationSystem {
         }
         
         // Clean up completed non-looping animations
+        const toDelete = [];
         for (const [entityId, activeAnim] of this.activeAnimations.entries()) {
             if (activeAnim.completed && !activeAnim.animation.loop) {
-                this.activeAnimations.delete(entityId);
+                toDelete.push(entityId);
             }
+        }
+        
+        for (const entityId of toDelete) {
+            this.activeAnimations.delete(entityId);
         }
     }
     
@@ -107,6 +215,77 @@ export class AnimationSystem {
         
         return Math.min(activeAnim.currentTime / activeAnim.animation.totalTime, 1);
     }
+    
+    // Set global animation speed multiplier
+    setGlobalSpeed(speed) {
+        this.globalSpeed = Math.max(0, speed);
+    }
+    
+    // Get global animation speed
+    getGlobalSpeed() {
+        return this.globalSpeed;
+    }
+    
+    // Pause all animations for an entity
+    pauseAnimation(entityId) {
+        const activeAnim = this.activeAnimations.get(entityId);
+        if (activeAnim) {
+            activeAnim.paused = true;
+        }
+    }
+    
+    // Resume animation for an entity
+    resumeAnimation(entityId) {
+        const activeAnim = this.activeAnimations.get(entityId);
+        if (activeAnim) {
+            activeAnim.paused = false;
+        }
+    }
+    
+    // Get all animations with specific tag
+    getAnimationsByTag(tag) {
+        const result = [];
+        for (const [name, animation] of this.animations.entries()) {
+            if (animation.tags.includes(tag)) {
+                result.push(name);
+            }
+        }
+        return result;
+    }
+    
+    // Clear animation queue for entity
+    clearQueue(entityId) {
+        this.animationQueue.delete(entityId);
+    }
+    
+    // Get queue length for entity
+    getQueueLength(entityId) {
+        const queue = this.animationQueue.get(entityId);
+        return queue ? queue.length : 0;
+    }
+    
+    // Advanced: Cross-fade between animations (for smooth transitions)
+    crossFade(entityId, toAnimation, duration = 300) {
+        const currentActive = this.activeAnimations.get(entityId);
+        if (!currentActive) {
+            return this.startAnimation(entityId, toAnimation);
+        }
+        
+        // Store current animation for blending
+        this.blendingAnimations.set(entityId, {
+            from: { ...currentActive },
+            to: toAnimation,
+            duration,
+            currentTime: 0,
+            blendProgress: 0
+        });
+        
+        // Start new animation with reduced opacity initially
+        return this.startAnimation(entityId, toAnimation, { 
+            blendWeight: 0,
+            force: true
+        });
+    }
 }
 
 // Animation State Machine for complex character animations
@@ -135,14 +314,47 @@ export class AnimationStateMachine {
         this.transitions.set(key, condition);
     }
     
-    // Set parameter for conditions
+    // Set parameter for conditions with type safety
     setParameter(name, value) {
+        const oldValue = this.parameters.get(name);
         this.parameters.set(name, value);
+        
+        // Trigger immediate transition check if parameter changed
+        if (oldValue !== value) {
+            this.update();
+        }
     }
     
-    // Get parameter value
-    getParameter(name) {
-        return this.parameters.get(name);
+    // Get parameter value with default
+    getParameter(name, defaultValue = null) {
+        return this.parameters.has(name) ? this.parameters.get(name) : defaultValue;
+    }
+    
+    // Set multiple parameters at once
+    setParameters(paramObj) {
+        let hasChanges = false;
+        for (const [name, value] of Object.entries(paramObj)) {
+            if (this.parameters.get(name) !== value) {
+                hasChanges = true;
+                this.parameters.set(name, value);
+            }
+        }
+        
+        // Only update if parameters actually changed
+        if (hasChanges) {
+            this.update();
+        }
+    }
+    
+    // Convenience methods for boolean parameters (triggers)
+    trigger(triggerName) {
+        this.setParameter(triggerName, true);
+        // Auto-reset trigger after one update cycle
+        setTimeout(() => {
+            if (this.parameters.get(triggerName)) {
+                this.parameters.set(triggerName, false);
+            }
+        }, 0);
     }
     
     // Update state machine

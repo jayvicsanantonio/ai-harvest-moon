@@ -7,7 +7,19 @@
     <link rel="stylesheet" href="styles/main.css">
 </head>
 <body>
-    <div id="game-container">
+    <div id="loading-screen">
+        <div id="loading-content">
+            <h1>Harvest Moon</h1>
+            <div id="loading-bar-container">
+                <div id="loading-bar">
+                    <div id="loading-progress"></div>
+                </div>
+            </div>
+            <p id="loading-text">Loading...</p>
+        </div>
+    </div>
+    
+    <div id="game-container" style="display: none;">
         <canvas id="game-canvas" width="800" height="600"></canvas>
         <div id="ui-overlay">
             <div id="hud" class="ui-panel">

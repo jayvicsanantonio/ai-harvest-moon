@@ -5,6 +5,7 @@ import { RenderSystem } from './RenderSystem.js';
 import { InputManager } from './InputManager.js';
 import { CollisionSystem } from './CollisionSystem.js';
 import { AnimationSystem } from './AnimationSystem.js';
+import { AssetManager } from './AssetManager.js';
 import { StaminaSystem } from '../systems/StaminaSystem.js';
 
 export class GameEngine {
@@ -50,6 +51,9 @@ export class GameEngine {
     
     // Stamina system
     this.staminaSystem = null;
+    
+    // Asset management
+    this.assetManager = null;
   }
 
   async init() {
@@ -58,8 +62,12 @@ export class GameEngine {
       throw new Error("Unable to get 2D rendering context");
     }
 
+    // Initialize asset manager first
+    this.assetManager = new AssetManager();
+    this.registerSystem('assets', this.assetManager);
+
     // Initialize rendering system
-    this.renderSystem = new RenderSystem(this.canvas, this.ctx);
+    this.renderSystem = new RenderSystem(this.canvas, this.ctx, this.assetManager);
     this.registerSystem('render', this.renderSystem);
     
     // Initialize input system
