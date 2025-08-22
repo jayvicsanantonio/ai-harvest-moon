@@ -38,20 +38,96 @@ export class FarmScene {
     setupAnimations() {
         if (!this.engine.animationSystem) return;
         
-        // Register player animations
-        this.engine.animationSystem.registerAnimation('idle_down', ['player_idle_down'], 500, true);
-        this.engine.animationSystem.registerAnimation('idle_up', ['player_idle_up'], 500, true);
-        this.engine.animationSystem.registerAnimation('idle_left', ['player_idle_left'], 500, true);
-        this.engine.animationSystem.registerAnimation('idle_right', ['player_idle_right'], 500, true);
+        // Register enhanced player animations with events and tags
+        this.engine.animationSystem.registerAnimation('idle_down', {
+            frames: ['player_idle_down'],
+            frameTime: 500,
+            loop: true,
+            tags: ['idle', 'player'],
+            priority: 1
+        });
         
-        this.engine.animationSystem.registerAnimation('walk_down', 
-            ['player_walk_down_1', 'player_walk_down_2', 'player_walk_down_3', 'player_walk_down_2'], 150, true);
-        this.engine.animationSystem.registerAnimation('walk_up', 
-            ['player_walk_up_1', 'player_walk_up_2', 'player_walk_up_3', 'player_walk_up_2'], 150, true);
-        this.engine.animationSystem.registerAnimation('walk_left', 
-            ['player_walk_left_1', 'player_walk_left_2', 'player_walk_left_3', 'player_walk_left_2'], 150, true);
-        this.engine.animationSystem.registerAnimation('walk_right', 
-            ['player_walk_right_1', 'player_walk_right_2', 'player_walk_right_3', 'player_walk_right_2'], 150, true);
+        this.engine.animationSystem.registerAnimation('idle_up', {
+            frames: ['player_idle_up'],
+            frameTime: 500,
+            loop: true,
+            tags: ['idle', 'player'],
+            priority: 1
+        });
+        
+        this.engine.animationSystem.registerAnimation('idle_left', {
+            frames: ['player_idle_left'],
+            frameTime: 500,
+            loop: true,
+            tags: ['idle', 'player'],
+            priority: 1
+        });
+        
+        this.engine.animationSystem.registerAnimation('idle_right', {
+            frames: ['player_idle_right'],
+            frameTime: 500,
+            loop: true,
+            tags: ['idle', 'player'],
+            priority: 1
+        });
+        
+        // Walking animations with step sound events
+        this.engine.animationSystem.registerAnimation('walk_down', {
+            frames: ['player_walk_down_1', 'player_walk_down_2', 'player_walk_down_3', 'player_walk_down_2'],
+            frameTime: 150,
+            loop: true,
+            priority: 2,
+            tags: ['walk', 'player'],
+            events: {
+                1: (entityId) => this.playFootstepSound(entityId),
+                3: (entityId) => this.playFootstepSound(entityId)
+            }
+        });
+        
+        this.engine.animationSystem.registerAnimation('walk_up', {
+            frames: ['player_walk_up_1', 'player_walk_up_2', 'player_walk_up_3', 'player_walk_up_2'],
+            frameTime: 150,
+            loop: true,
+            priority: 2,
+            tags: ['walk', 'player'],
+            events: {
+                1: (entityId) => this.playFootstepSound(entityId),
+                3: (entityId) => this.playFootstepSound(entityId)
+            }
+        });
+        
+        this.engine.animationSystem.registerAnimation('walk_left', {
+            frames: ['player_walk_left_1', 'player_walk_left_2', 'player_walk_left_3', 'player_walk_left_2'],
+            frameTime: 150,
+            loop: true,
+            priority: 2,
+            tags: ['walk', 'player'],
+            events: {
+                1: (entityId) => this.playFootstepSound(entityId),
+                3: (entityId) => this.playFootstepSound(entityId)
+            }
+        });
+        
+        this.engine.animationSystem.registerAnimation('walk_right', {
+            frames: ['player_walk_right_1', 'player_walk_right_2', 'player_walk_right_3', 'player_walk_right_2'],
+            frameTime: 150,
+            loop: true,
+            priority: 2,
+            tags: ['walk', 'player'],
+            events: {
+                1: (entityId) => this.playFootstepSound(entityId),
+                3: (entityId) => this.playFootstepSound(entityId)
+            }
+        });
+    }
+    
+    // Sound event handler for footsteps
+    playFootstepSound(entityId) {
+        // For now just log, but this would trigger audio system
+        console.log(`Footstep sound for entity ${entityId}`);
+        
+        // Future: play actual footstep sound through AssetManager
+        // this.engine.assetManager.playAudio('sfx_footstep');
     }
 
     createPlayer() {

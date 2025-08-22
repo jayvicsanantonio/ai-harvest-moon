@@ -3,10 +3,12 @@
 
 import { GameEngine } from './engine/GameEngine.js';
 import { FarmScene } from './scenes/FarmScene.js';
+import { AssetLoader } from './utils/AssetLoader.js';
 
 class Game {
     constructor() {
         this.engine = null;
+        this.assetLoader = null;
         this.isInitialized = false;
     }
 
@@ -17,9 +19,19 @@ class Game {
                 throw new Error('Game canvas not found');
             }
 
+            // Initialize game engine
             this.engine = new GameEngine(canvas);
             await this.engine.init();
 
+            // Create asset loader and queue all game assets
+            this.assetLoader = new AssetLoader(this.engine.assetManager);
+            this.assetLoader.queueGameAssets();
+
+            // Load assets
+            console.log('Loading game assets...');
+            await this.assetLoader.loadAll();
+            
+            // Initialize scene after assets are loaded
             const farmScene = new FarmScene();
             this.engine.setScene(farmScene);
             
@@ -69,6 +81,15 @@ document.addEventListener('DOMContentLoaded', async () => {
         game.showError(event.detail.message);
     });
     
+    // Listen for assets loaded event to show game container
+    window.addEventListener('assetsLoaded', (event) => {
+        const gameContainer = document.getElementById('game-container');
+        if (gameContainer) {
+            gameContainer.style.display = 'flex';
+        }
+        console.log('Assets loaded, showing game container');
+    });
+    
     // Add debug mode toggle (press F1 to toggle debug info)
     document.addEventListener('keydown', (event) => {
         if (event.key === 'F1') {
@@ -78,6 +99,9 @@ document.addEventListener('DOMContentLoaded', async () => {
             console.log(`Debug mode ${!isDebug ? 'enabled' : 'disabled'}`);
         }
     });
+    
+    // Show loading screen (it's visible by default in HTML)
+    console.log('Starting game initialization...');
     
     await game.init();
     game.start();
