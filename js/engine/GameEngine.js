@@ -9,6 +9,7 @@ import { AssetManager } from './AssetManager.js';
 import { SceneManager } from './SceneManager.js';
 import { StaminaSystem } from '../systems/StaminaSystem.js';
 import { FarmingSystem } from '../systems/FarmingSystem.js';
+import { ToolSystem } from '../systems/ToolSystem.js';
 
 export class GameEngine {
   constructor(canvas) {
@@ -57,6 +58,9 @@ export class GameEngine {
     // Farming system
     this.farmingSystem = null;
     
+    // Tool system
+    this.toolSystem = null;
+    
     // Asset management
     this.assetManager = null;
     
@@ -97,6 +101,10 @@ export class GameEngine {
     // Initialize farming system
     this.farmingSystem = new FarmingSystem();
     this.registerSystem('farming', this.farmingSystem);
+    
+    // Initialize tool system
+    this.toolSystem = new ToolSystem();
+    this.registerSystem('tool', this.toolSystem);
     
     // Initialize scene manager
     this.sceneManager = new SceneManager(this);

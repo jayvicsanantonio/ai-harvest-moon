@@ -80,40 +80,40 @@
     - Add FarmScene, VillageScene, and InteriorScene classes
     - _Requirements: 10.3, 10.4_
 
-- [ ] 6. Implement basic farming mechanics
-  - [ ] 6.1 Create farming system core
+- [x] 6. Implement basic farming mechanics
+  - [x] 6.1 Create farming system core
     - Build FarmingSystem class with crop management
     - Implement soil tilling mechanics with hoe tool usage
     - Add farmable tile detection and state tracking
     - _Requirements: 2.1, 6.2_
-  - [ ] 6.2 Add crop planting and growth
+  - [x] 6.2 Add crop planting and growth
     - Create Crop entity with growth stage state machine
     - Implement seed planting on tilled soil plots
     - Add growth progression with time-based advancement
     - _Requirements: 2.2, 2.7_
-  - [ ] 6.3 Implement watering system
+  - [x] 6.3 Implement watering system
     - Add watering can tool with water level tracking
     - Implement crop watering mechanics that affect growth
     - Create visual indicators for watered vs dry crops
     - _Requirements: 2.3, 2.6_
-  - [ ] 6.4 Add crop harvesting
+  - [x] 6.4 Add crop harvesting
     - Detect mature crops with visual harvest indicators
     - Implement harvesting action that adds produce to inventory
     - Clear harvested plots and reset for replanting
     - _Requirements: 2.4, 2.5_
 
-- [ ] 7. Build inventory and item management
-  - [ ] 7.1 Create inventory system
+- [x] 7. Build inventory and item management
+  - [x] 7.1 Create inventory system
     - Build Inventory class with item storage and quantity tracking
     - Implement item stacking and capacity limits
     - Add item categorization (crops, tools, resources)
     - _Requirements: 6.1, 6.3_
-  - [ ] 7.2 Implement inventory UI
+  - [x] 7.2 Implement inventory UI
     - Create inventory interface with grid layout
     - Add drag-and-drop item management
     - Implement item tooltips with descriptions and values
     - _Requirements: 6.1, 6.3_
-  - [ ] 7.3 Add tool system
+  - [x] 7.3 Add tool system
     - Create Tool entities with durability and efficiency stats
     - Implement tool usage with stamina costs
     - Add tool upgrade system with improved capabilities

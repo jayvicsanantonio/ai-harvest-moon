@@ -549,7 +549,13 @@ export class FarmingSystem {
         }
         
         // Check if player has the specific seed type
-        if (!this.hasSeeds(seeds, seedType)) {
+        if (!player || !player.inventory) {
+            console.log('Player inventory not available');
+            return false;
+        }
+        
+        const seedItemId = `${seedType}_seeds`;
+        if (!player.inventory.hasItem(seedItemId, 1)) {
             console.log(`No ${seedType} seeds available`);
             return false;
         }
@@ -578,8 +584,11 @@ export class FarmingSystem {
             currentScene.addEntity(crop);
         }
         
-        // Consume seed from inventory
-        this.useSeeds(seeds, seedType, 1);
+        // Consume seed from player inventory
+        if (player && player.inventory) {
+            const seedItemId = `${seedType}_seeds`;
+            player.inventory.removeItem(seedItemId, 1);
+        }
         
         // Update statistics
         this.stats.plantedCrops++;
@@ -622,8 +631,7 @@ export class FarmingSystem {
         
         // Add harvested items to player inventory
         if (player && player.inventory) {
-            const currentAmount = player.inventory.get(harvestResult.itemType) || 0;
-            player.inventory.set(harvestResult.itemType, currentAmount + harvestResult.amount);
+            player.inventory.addItem(harvestResult.itemType, harvestResult.amount, harvestResult.quality);
         }
         
         // Remove crop from active crops

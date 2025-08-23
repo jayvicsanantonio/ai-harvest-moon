@@ -3,6 +3,8 @@
 
 import { MovementComponent } from '../engine/MovementSystem.js';
 import { AnimationStateMachine } from '../engine/AnimationSystem.js';
+import { InventorySystem } from '../systems/InventorySystem.js';
+import { InventoryUI } from '../ui/InventoryUI.js';
 
 export class Player {
     constructor(x = 0, y = 0, gameEngine = null) {
@@ -35,7 +37,8 @@ export class Player {
             regenRate: 10 // per second when idle
         };
         
-        this.inventory = new Map();
+        this.inventory = new InventorySystem();
+        this.inventoryUI = new InventoryUI(this);
         this.money = 500;
         this.tools = new Map();
         this.seeds = {
@@ -84,13 +87,45 @@ export class Player {
     }
     
     initializeTools() {
-        // Start with basic tools
+        // Create tools using ToolSystem if available
+        if (this.gameEngine?.toolSystem) {
+            const toolSystem = this.gameEngine.toolSystem;
+            
+            // Create basic tools
+            const hoe = toolSystem.createTool('basic_hoe', this.entityId);
+            const wateringCan = toolSystem.createTool('basic_watering_can', this.entityId);
+            const axe = toolSystem.createTool('basic_axe', this.entityId);
+            const pickaxe = toolSystem.createTool('basic_pickaxe', this.entityId);
+            
+            // Add tools to inventory system
+            if (hoe) this.inventory.addItem('hoe', 1, 'normal', { toolId: hoe.id });
+            if (wateringCan) this.inventory.addItem('watering_can', 1, 'normal', { toolId: wateringCan.id });
+            if (axe) this.inventory.addItem('axe', 1, 'normal', { toolId: axe.id });
+            if (pickaxe) this.inventory.addItem('pickaxe', 1, 'normal', { toolId: pickaxe.id });
+            
+            // Set default active tool
+            if (hoe) {
+                toolSystem.setActiveTool(this.entityId, hoe.id);
+                this.currentTool = 'hoe';
+            }
+        }
+        
+        // Add starting seeds to inventory
+        this.inventory.addItem('turnip_seeds', 10);
+        this.inventory.addItem('potato_seeds', 5);
+        this.inventory.addItem('carrot_seeds', 5);
+        this.inventory.addItem('corn_seeds', 2);
+        this.inventory.addItem('tomato_seeds', 2);
+        
+        // Keep tools map for backward compatibility
         this.tools.set('hoe', { durability: 100, efficiency: 1 });
         this.tools.set('watering_can', { water: 20, capacity: 20, efficiency: 1 });
         this.tools.set('seeds', { seeds: this.seeds, efficiency: 1 });
         this.tools.set('axe', { durability: 100, efficiency: 1 });
         this.tools.set('pickaxe', { durability: 100, efficiency: 1 });
         this.currentTool = 'hoe';
+        
+        console.log('Player initialized with starting tools and seeds');
     }
     
     init(gameEngine) {
@@ -216,6 +251,14 @@ export class Player {
         if (inputManager.isKeyPressed('KeyE')) {
             this.switchSeed();
         }
+        
+        // Handle inventory UI
+        if (inputManager.isKeyPressed('KeyI')) {
+            this.inventoryUI.toggle();
+        }
+        
+        // Update inventory UI input
+        this.inventoryUI.handleInput(inputManager);
         
         // Update animation state machine
         if (this.animationStateMachine) {
@@ -541,7 +584,11 @@ export class Player {
     
     // Switch between available seed types
     switchSeed() {
-        const availableSeeds = Object.keys(this.seeds).filter(seedType => this.seeds[seedType] > 0);
+        const seedTypes = ['turnip', 'potato', 'carrot', 'corn', 'tomato'];
+        const availableSeeds = seedTypes.filter(seedType => {
+            const seedItemId = `${seedType}_seeds`;
+            return this.inventory.hasItem(seedItemId, 1);
+        });
         
         if (availableSeeds.length === 0) {
             console.log('No seeds available!');
@@ -552,7 +599,9 @@ export class Player {
         const nextIndex = currentIndex === -1 ? 0 : (currentIndex + 1) % availableSeeds.length;
         
         this.currentSeed = availableSeeds[nextIndex];
-        console.log(`Selected ${this.currentSeed} seeds (${this.seeds[this.currentSeed]} remaining)`);
+        const seedItemId = `${this.currentSeed}_seeds`;
+        const seedCount = this.inventory.getItemCount(seedItemId);
+        console.log(`Selected ${this.currentSeed} seeds (${seedCount} remaining)`);
     }
     
     // Switch between available tools
@@ -609,6 +658,9 @@ export class Player {
                 { layer: 16 }
             );
         }
+        
+        // Render inventory UI if open
+        this.inventoryUI.render(renderSystem);
     }
     
     consumeStamina(amount) {
