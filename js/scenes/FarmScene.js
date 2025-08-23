@@ -333,6 +333,15 @@ export class FarmScene extends Scene {
             this.handleSleepInteraction();
         }
         
+        // Handle save/load interactions
+        if (inputManager.isKeyPressed('F5')) {
+            this.handleQuickSave();
+        }
+        
+        if (inputManager.isKeyPressed('F9')) {
+            this.handleQuickLoad();
+        }
+        
         // Farm-specific update logic can go here
         // Base Scene class already handles entity updates
     }
@@ -411,6 +420,55 @@ export class FarmScene extends Scene {
             }
         } else {
             console.log(result.message);
+        }
+    }
+
+    // Handle quick save (F5)
+    handleQuickSave() {
+        if (!this.engine.saveManager) {
+            console.log('Save system not available');
+            return;
+        }
+        
+        try {
+            const result = this.engine.saveManager.saveGame(0, {
+                characterName: 'Player',
+                farmName: 'Green Valley Farm',
+                quickSave: true
+            });
+            
+            if (result.success) {
+                console.log('Game saved successfully!');
+                // Future: Show save confirmation UI
+            } else {
+                console.error('Save failed:', result.error);
+                // Future: Show error message to player
+            }
+        } catch (error) {
+            console.error('Save system error:', error);
+        }
+    }
+    
+    // Handle quick load (F9)
+    handleQuickLoad() {
+        if (!this.engine.saveManager) {
+            console.log('Save system not available');
+            return;
+        }
+        
+        try {
+            const result = this.engine.saveManager.loadGame(0);
+            
+            if (result.success) {
+                console.log('Game loaded successfully!');
+                // Future: Show load confirmation UI
+                // The scene will be automatically updated by the loaded data
+            } else {
+                console.error('Load failed:', result.error);
+                // Future: Show error message to player
+            }
+        } catch (error) {
+            console.error('Load system error:', error);
         }
     }
 

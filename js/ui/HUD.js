@@ -513,6 +513,30 @@ export class HUD {
             if (inputManager.isKeyPressed('KeyP')) {
                 this.gameEngine.timeSystem.togglePause();
             }
+            
+            // Save system controls
+            if (inputManager.isKeyPressed('F12')) {
+                this.showSaveDebugInfo();
+            }
         }
+    }
+    
+    // Show save system debug information
+    showSaveDebugInfo() {
+        if (!this.gameEngine.saveManager) return;
+        
+        const stats = this.gameEngine.saveManager.getStorageStats();
+        const saveSlots = this.gameEngine.saveManager.getAllSaveSlots();
+        
+        console.group('Save System Debug Info');
+        console.log('Storage Stats:', stats);
+        console.log('Save Slots:', saveSlots);
+        
+        if (this.gameEngine.saveManager.errorHandler) {
+            const errorStats = this.gameEngine.saveManager.errorHandler.getErrorStats();
+            console.log('Error Stats:', errorStats);
+        }
+        
+        console.groupEnd();
     }
 }

@@ -14,6 +14,7 @@ import { TimeSystem } from '../systems/TimeSystem.js';
 import { SleepSystem } from '../systems/SleepSystem.js';
 import { SeasonalSystem } from '../systems/SeasonalSystem.js';
 import { WeatherSystem } from '../systems/WeatherSystem.js';
+import { LocalStorageSaveManager } from '../systems/LocalStorageSaveManager.js';
 
 export class GameEngine {
   constructor(canvas) {
@@ -82,6 +83,9 @@ export class GameEngine {
     
     // Scene management
     this.sceneManager = null;
+    
+    // Save/Load system
+    this.saveManager = null;
   }
 
   async init() {
@@ -141,6 +145,11 @@ export class GameEngine {
     // Initialize scene manager
     this.sceneManager = new SceneManager(this);
     this.registerSystem('scene', this.sceneManager);
+    
+    // Initialize save manager
+    this.saveManager = new LocalStorageSaveManager();
+    this.saveManager.init(this);
+    this.registerSystem('save', this.saveManager);
 
     console.log("GameEngine initialized");
   }
