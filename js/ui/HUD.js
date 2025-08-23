@@ -179,16 +179,21 @@ export class HUD {
             }
         );
         
-        // Weather indicator (placeholder)
-        renderSystem.drawText(
-            '☀️ Clear',
-            section.x + this.padding, section.y + this.padding + 62,
-            { 
-                color: '#ffff00', 
-                fontSize: this.smallFontSize, 
-                layer: 201 
-            }
-        );
+        // Weather indicator
+        if (this.gameEngine.weatherSystem) {
+            const weather = this.gameEngine.weatherSystem.getCurrentWeather();
+            const weatherDisplay = this.getWeatherDisplay(weather.type);
+            
+            renderSystem.drawText(
+                `${weatherDisplay.icon} ${weatherDisplay.text}`,
+                section.x + this.padding, section.y + this.padding + 62,
+                { 
+                    color: weatherDisplay.color, 
+                    fontSize: this.smallFontSize, 
+                    layer: 201 
+                }
+            );
+        }
     }
     
     // Render stamina bar and info
@@ -441,6 +446,33 @@ export class HUD {
         
         // Find player entity in current scene
         return currentScene.entities?.find(entity => entity.constructor.name === 'Player') || null;
+    }
+    
+    // Get weather display information
+    getWeatherDisplay(weatherType) {
+        const weatherDisplays = {
+            sunny: {
+                icon: '☀️',
+                text: 'Sunny',
+                color: '#ffff00'
+            },
+            cloudy: {
+                icon: '☁️',
+                text: 'Cloudy', 
+                color: '#cccccc'
+            },
+            rainy: {
+                icon: '🌧️',
+                text: 'Rainy',
+                color: '#4682b4'
+            }
+        };
+        
+        return weatherDisplays[weatherType] || {
+            icon: '?',
+            text: 'Unknown',
+            color: '#ffffff'
+        };
     }
     
     // Show/hide HUD

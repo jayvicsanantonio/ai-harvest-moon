@@ -352,10 +352,16 @@ export class FarmScene extends Scene {
             this.hud.render(renderSystem);
         }
         
+        // Render weather effects
+        if (this.engine.weatherSystem) {
+            this.engine.weatherSystem.renderWeatherEffects(renderSystem);
+        }
+        
         // Render debug information if debug mode is enabled
         if (this.engine.isDebugMode()) {
             this.engine.collisionSystem.renderDebug(renderSystem);
             this.engine.sleepSystem?.renderDebug(renderSystem);
+            this.engine.weatherSystem?.renderDebug(renderSystem);
             renderSystem.renderCullingDebug();
             this.renderPerformanceStats(renderSystem);
         }

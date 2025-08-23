@@ -12,6 +12,8 @@ import { FarmingSystem } from '../systems/FarmingSystem.js';
 import { ToolSystem } from '../systems/ToolSystem.js';
 import { TimeSystem } from '../systems/TimeSystem.js';
 import { SleepSystem } from '../systems/SleepSystem.js';
+import { SeasonalSystem } from '../systems/SeasonalSystem.js';
+import { WeatherSystem } from '../systems/WeatherSystem.js';
 
 export class GameEngine {
   constructor(canvas) {
@@ -69,6 +71,12 @@ export class GameEngine {
     // Sleep system
     this.sleepSystem = null;
     
+    // Seasonal system
+    this.seasonalSystem = null;
+    
+    // Weather system
+    this.weatherSystem = null;
+    
     // Asset management
     this.assetManager = null;
     
@@ -121,6 +129,14 @@ export class GameEngine {
     // Initialize sleep system
     this.sleepSystem = new SleepSystem();
     this.registerSystem('sleep', this.sleepSystem);
+    
+    // Initialize seasonal system
+    this.seasonalSystem = new SeasonalSystem();
+    this.registerSystem('seasonal', this.seasonalSystem);
+    
+    // Initialize weather system
+    this.weatherSystem = new WeatherSystem();
+    this.registerSystem('weather', this.weatherSystem);
     
     // Initialize scene manager
     this.sceneManager = new SceneManager(this);

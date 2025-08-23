@@ -23,6 +23,13 @@ export class RenderSystem {
         this.renderQueue = [];
         this.clearColor = '#87CEEB';
         
+        // Weather effects state
+        this.weatherEffects = {
+            skyTint: '#87CEEB',
+            lightLevel: 1.0,
+            visibility: 1.0
+        };
+        
         // Performance tracking
         this.stats = {
             drawCalls: 0,
@@ -482,5 +489,27 @@ export class RenderSystem {
         this.camera.width = width;
         this.camera.height = height;
         this.updateCullBounds();
+    }
+    
+    // Weather effects support
+    setWeatherEffects(effects) {
+        this.weatherEffects = { ...this.weatherEffects, ...effects };
+        // Update clear color based on sky tint
+        this.clearColor = this.weatherEffects.skyTint;
+    }
+    
+    getWeatherEffects() {
+        return { ...this.weatherEffects };
+    }
+    
+    applyWeatherLighting(alpha = 1.0) {
+        // Apply global lighting based on weather
+        const adjustedAlpha = alpha * this.weatherEffects.lightLevel * this.weatherEffects.visibility;
+        this.ctx.globalAlpha = Math.max(0.1, Math.min(1.0, adjustedAlpha));
+        return adjustedAlpha;
+    }
+    
+    resetWeatherLighting() {
+        this.ctx.globalAlpha = 1.0;
     }
 }

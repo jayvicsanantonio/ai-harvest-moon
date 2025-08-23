@@ -26,12 +26,75 @@ export class FarmingSystem {
             harvest: ['hands'] // No tool needed for harvesting
         };
         
+        // Crop database with seasonal availability
+        this.cropDatabase = {
+            turnip: {
+                name: 'Turnip',
+                seasons: ['SPRING', 'AUTUMN'],
+                growthTime: 4, // days
+                value: 60,
+                rarity: 'common'
+            },
+            potato: {
+                name: 'Potato',
+                seasons: ['SPRING', 'SUMMER', 'AUTUMN'],
+                growthTime: 6,
+                value: 80,
+                rarity: 'common'
+            },
+            carrot: {
+                name: 'Carrot',
+                seasons: ['SPRING', 'SUMMER'],
+                growthTime: 5,
+                value: 120,
+                rarity: 'uncommon'
+            },
+            corn: {
+                name: 'Corn',
+                seasons: ['SUMMER'],
+                growthTime: 14,
+                value: 150,
+                rarity: 'uncommon',
+                continualHarvest: true
+            },
+            tomato: {
+                name: 'Tomato',
+                seasons: ['SUMMER', 'AUTUMN'],
+                growthTime: 11,
+                value: 60,
+                rarity: 'common',
+                continualHarvest: true
+            },
+            parsnip: {
+                name: 'Parsnip',
+                seasons: ['SPRING'],
+                growthTime: 4,
+                value: 35,
+                rarity: 'common'
+            },
+            cauliflower: {
+                name: 'Cauliflower',
+                seasons: ['SPRING'],
+                growthTime: 12,
+                value: 175,
+                rarity: 'rare'
+            },
+            pumpkin: {
+                name: 'Pumpkin',
+                seasons: ['AUTUMN'],
+                growthTime: 13,
+                value: 320,
+                rarity: 'rare'
+            }
+        };
+        
         // Performance tracking
         this.stats = {
             tilledPlots: 0,
             plantedCrops: 0,
             wateredPlots: 0,
-            harvestedCrops: 0
+            harvestedCrops: 0,
+            outOfSeasonAttempts: 0
         };
         
         console.log('FarmingSystem initialized');
@@ -42,6 +105,52 @@ export class FarmingSystem {
         this.gameEngine = gameEngine;
         this.setupFarmableAreas();
         this.setupTimeCallbacks();
+    }
+    
+    // Check if a crop can be planted in the current season
+    canPlantCropInSeason(seedType) {
+        const cropData = this.cropDatabase[seedType];
+        if (!cropData) {
+            console.warn(`Unknown crop type: ${seedType}`);
+            return false;
+        }
+        
+        // Get current season from seasonal system
+        const currentSeason = this.gameEngine?.seasonalSystem?.currentSeason;
+        if (!currentSeason) {
+            // If no seasonal system, allow all crops
+            return true;
+        }
+        
+        return cropData.seasons.includes(currentSeason);
+    }
+    
+    // Get seasonal information for a crop
+    getCropSeasonInfo(seedType) {
+        const cropData = this.cropDatabase[seedType];
+        if (!cropData) return null;
+        
+        const currentSeason = this.gameEngine?.seasonalSystem?.currentSeason;
+        
+        return {
+            name: cropData.name,
+            seasons: cropData.seasons,
+            currentSeason: currentSeason,
+            canPlant: cropData.seasons.includes(currentSeason),
+            growthTime: cropData.growthTime,
+            value: cropData.value,
+            rarity: cropData.rarity
+        };
+    }
+    
+    // Get all crops available for current season
+    getAvailableCropsForSeason() {
+        const currentSeason = this.gameEngine?.seasonalSystem?.currentSeason;
+        if (!currentSeason) return Object.keys(this.cropDatabase);
+        
+        return Object.keys(this.cropDatabase).filter(cropType => 
+            this.cropDatabase[cropType].seasons.includes(currentSeason)
+        );
     }
     
     // Setup farmable areas based on current scene
@@ -563,6 +672,16 @@ export class FarmingSystem {
         if (!this.canUseTool('plant', seeds)) {
             console.log('Need seeds to plant!');
             return false;
+        }
+        
+        // Check seasonal restrictions
+        if (!this.canPlantCropInSeason(seedType)) {
+            const seasonInfo = this.getCropSeasonInfo(seedType);
+            if (seasonInfo) {
+                console.log(`Cannot plant ${seasonInfo.name} in ${seasonInfo.currentSeason}. Available in: ${seasonInfo.seasons.join(', ')}`);
+                this.stats.outOfSeasonAttempts++;
+                return false;
+            }
         }
         
         const worldX = tileX * this.tileSize;
