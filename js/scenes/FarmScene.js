@@ -29,6 +29,7 @@ export class FarmScene extends Scene {
         this.initializeFarming();
         this.setupBeds();
         this.spawnTestAnimals();
+        this.spawnTestNPCs();
         
         // Add player to entities array
         if (this.player) {
@@ -364,6 +365,11 @@ export class FarmScene extends Scene {
             this.handleAnimalInteraction();
         }
         
+        // Handle NPC interactions (C key for conversation)
+        if (inputManager.isKeyPressed('KeyC')) {
+            this.handleNPCInteraction();
+        }
+        
         // Farm-specific update logic can go here
         // Base Scene class already handles entity updates
     }
@@ -394,6 +400,8 @@ export class FarmScene extends Scene {
             this.engine.sleepSystem?.renderDebug(renderSystem);
             this.engine.weatherSystem?.renderDebug(renderSystem);
             this.engine.animalSystem?.renderDebug(renderSystem);
+            this.engine.npcSystem?.renderDebug(renderSystem);
+            this.engine.dialogueSystem?.renderDebug(renderSystem);
             renderSystem.renderCullingDebug();
             this.renderPerformanceStats(renderSystem);
         }
@@ -570,6 +578,76 @@ export class FarmScene extends Scene {
             default:
                 result = { success: false, message: 'Unknown interaction' };
         }
+        
+        // Display result
+        if (result.success) {
+            console.log(`✓ ${result.message}`);
+        } else {
+            console.log(`✗ ${result.message}`);
+        }
+    }
+    
+    // Spawn test NPCs for demonstration
+    spawnTestNPCs() {
+        if (!this.engine.npcSystem) return;
+        
+        // Spawn a merchant NPC near the farmhouse
+        const merchant = this.engine.npcSystem.spawnNPC('merchant_tom', 3 * 32, 3 * 32, 'Farm');
+        if (merchant) {
+            console.log('Spawned merchant Tom');
+        }
+        
+        // Spawn a farmer NPC 
+        const farmer = this.engine.npcSystem.spawnNPC('farmer_mary', 8 * 32, 5 * 32, 'Farm');
+        if (farmer) {
+            console.log('Spawned farmer Mary');
+        }
+    }
+    
+    // Handle NPC interaction (C key)
+    handleNPCInteraction() {
+        if (!this.player || !this.engine.npcSystem) {
+            console.log('NPC system not available');
+            return;
+        }
+        
+        // Prevent interaction if dialogue is active
+        if (this.engine.dialogueSystem && this.engine.dialogueSystem.isDialogueActive()) {
+            console.log('Already in conversation');
+            return;
+        }
+        
+        // Find nearest NPC
+        const nearestNPC = this.engine.npcSystem.getNearestNPC(
+            this.player.x, 
+            this.player.y
+        );
+        
+        if (!nearestNPC) {
+            console.log('No one nearby to talk to');
+            return;
+        }
+        
+        // Get interaction options
+        const options = nearestNPC.getInteractionOptions(this.player);
+        
+        if (options.length === 0) {
+            console.log(`${nearestNPC.name} is not available right now`);
+            return;
+        }
+        
+        // For now, perform the first available interaction (talk)
+        // Future: Show interaction menu to player
+        const firstOption = options.find(opt => opt.action === 'talk');
+        if (!firstOption) {
+            console.log('No talk option available');
+            return;
+        }
+        
+        // Start conversation
+        const result = this.engine.npcSystem.handlePlayerInteraction(
+            this.player, 'talk', nearestNPC
+        );
         
         // Display result
         if (result.success) {

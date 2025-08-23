@@ -187,18 +187,18 @@
     - Implement product quality system tied to care level
     - _Requirements: 3.4, 3.5_
 
-- [ ] 12. Build basic NPC and dialogue system
-  - [ ] 12.1 Create NPC entities and rendering
+- [x] 12. Build basic NPC and dialogue system
+  - [x] 12.1 Create NPC entities and rendering
     - Build NPC entity class with position and sprite data
     - Implement NPC rendering with idle animations
     - Add basic NPC placement in village scenes
     - _Requirements: 4.1, 4.5_
-  - [ ] 12.2 Implement dialogue system
+  - [x] 12.2 Implement dialogue system
     - Create dialogue UI with text display and response options
     - Build dialogue tree traversal system
     - Add relationship point tracking from conversations
     - _Requirements: 4.2, 4.3, 4.7_
-  - [ ] 12.3 Add gift system basics
+  - [x] 12.3 Add gift system basics
     - Implement gift giving mechanics with item consumption
     - Create NPC gift preferences and relationship modifiers
     - Add relationship level thresholds and unlocks

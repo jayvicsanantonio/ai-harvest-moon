@@ -143,6 +143,11 @@ export class SaveManager {
             saveData.animals = this.serializeAnimalSystem();
         }
         
+        // NPC system data
+        if (this.gameEngine.npcSystem) {
+            saveData.npcs = this.serializeNPCSystem();
+        }
+        
         // World state
         saveData.world = {
             currentScene: this.gameEngine.sceneManager?.getCurrentScene()?.name || 'Farm',
@@ -246,6 +251,39 @@ export class SaveManager {
         return serializedData;
     }
     
+    serializeNPCSystem() {
+        const npcSystem = this.gameEngine.npcSystem;
+        const serializedData = {
+            npcs: {},
+            stats: npcSystem.stats || {},
+            villageEvents: npcSystem.villageEvents || []
+        };
+        
+        // Serialize NPCs
+        for (const [npcId, npc] of npcSystem.npcs || []) {
+            const relationships = {};
+            for (const [playerId, relationship] of npc.relationships.entries()) {
+                relationships[playerId] = relationship;
+            }
+            
+            serializedData.npcs[npcId] = {
+                npcId: npc.npcId,
+                name: npc.name,
+                x: npc.x,
+                y: npc.y,
+                profession: npc.profession,
+                mood: npc.mood,
+                energy: npc.energy,
+                currentActivity: npc.currentActivity,
+                relationships: relationships,
+                dailyInteractions: npc.dailyInteractions,
+                lastInteractionDay: npc.lastInteractionDay
+            };
+        }
+        
+        return serializedData;
+    }
+    
     // Load game state from save data
     loadGameState(saveData) {
         if (!this.validateSaveData(saveData)) {
@@ -277,6 +315,11 @@ export class SaveManager {
         // Load animal system
         if (saveData.animals && this.gameEngine.animalSystem) {
             this.loadAnimalSystem(saveData.animals);
+        }
+        
+        // Load NPC system
+        if (saveData.npcs && this.gameEngine.npcSystem) {
+            this.loadNPCSystem(saveData.npcs);
         }
         
         // Load world state
@@ -446,6 +489,64 @@ export class SaveManager {
                 console.log(`Restored ${Object.keys(animalData.animals).length} animals`);
             }).catch(error => {
                 console.error('Failed to load Animal class:', error);
+            });
+        }
+    }
+    
+    loadNPCSystem(npcData) {
+        const npcSystem = this.gameEngine.npcSystem;
+        const currentScene = this.gameEngine.sceneManager?.getCurrentScene();
+        
+        // Clear existing NPCs
+        npcSystem.cleanup();
+        
+        // Load stats
+        if (npcData.stats) {
+            npcSystem.stats = { ...npcSystem.stats, ...npcData.stats };
+        }
+        
+        // Load village events
+        if (npcData.villageEvents) {
+            npcSystem.villageEvents = [...npcData.villageEvents];
+        }
+        
+        // Load NPCs
+        if (npcData.npcs && currentScene) {
+            import('../entities/NPC.js').then(({ NPC }) => {
+                for (const [entityId, npcSaveData] of Object.entries(npcData.npcs)) {
+                    // Get NPC data from database
+                    const npcDefinition = npcSystem.npcDatabase[npcSaveData.npcId];
+                    if (!npcDefinition) {
+                        console.warn(`NPC definition not found for ${npcSaveData.npcId}`);
+                        continue;
+                    }
+                    
+                    // Create new NPC entity
+                    const npc = new NPC(npcSaveData.x, npcSaveData.y, npcDefinition, this.gameEngine);
+                    
+                    // Restore NPC state
+                    npc.entityId = entityId;
+                    npc.mood = npcSaveData.mood || 'neutral';
+                    npc.energy = npcSaveData.energy || 100;
+                    npc.currentActivity = npcSaveData.currentActivity || 'idle';
+                    npc.dailyInteractions = npcSaveData.dailyInteractions || 0;
+                    npc.lastInteractionDay = npcSaveData.lastInteractionDay || 0;
+                    
+                    // Restore relationships
+                    if (npcSaveData.relationships) {
+                        for (const [playerId, relationship] of Object.entries(npcSaveData.relationships)) {
+                            npc.relationships.set(playerId, relationship);
+                        }
+                    }
+                    
+                    // Initialize and register NPC
+                    npc.init(this.gameEngine);
+                    npcSystem.npcs.set(entityId, npc);
+                    currentScene.entities.push(npc);
+                }
+                console.log(`Restored ${Object.keys(npcData.npcs).length} NPCs`);
+            }).catch(error => {
+                console.error('Failed to load NPC class:', error);
             });
         }
     }

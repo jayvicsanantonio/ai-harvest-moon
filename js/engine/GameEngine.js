@@ -16,6 +16,8 @@ import { SeasonalSystem } from '../systems/SeasonalSystem.js';
 import { WeatherSystem } from '../systems/WeatherSystem.js';
 import { LocalStorageSaveManager } from '../systems/LocalStorageSaveManager.js';
 import { AnimalSystem } from '../systems/AnimalSystem.js';
+import { NPCSystem } from '../systems/NPCSystem.js';
+import { DialogueSystem } from '../systems/DialogueSystem.js';
 
 export class GameEngine {
   constructor(canvas) {
@@ -90,6 +92,10 @@ export class GameEngine {
     
     // Animal system
     this.animalSystem = null;
+    
+    // NPC and dialogue systems
+    this.npcSystem = null;
+    this.dialogueSystem = null;
   }
 
   async init() {
@@ -159,6 +165,16 @@ export class GameEngine {
     this.animalSystem = new AnimalSystem();
     this.animalSystem.init(this);
     this.registerSystem('animal', this.animalSystem);
+    
+    // Initialize dialogue system
+    this.dialogueSystem = new DialogueSystem();
+    this.dialogueSystem.init(this);
+    this.registerSystem('dialogue', this.dialogueSystem);
+    
+    // Initialize NPC system
+    this.npcSystem = new NPCSystem();
+    this.npcSystem.init(this);
+    this.registerSystem('npc', this.npcSystem);
 
     console.log("GameEngine initialized");
   }
@@ -214,6 +230,11 @@ export class GameEngine {
       if (this.sceneManager) {
         this.sceneManager.update(deltaTime, this.inputManager);
       }
+      
+      // Handle dialogue input if dialogue is active
+      if (this.dialogueSystem && this.dialogueSystem.isDialogueActive()) {
+        this.dialogueSystem.handleInput(this.inputManager);
+      }
 
       // Update all registered systems (except input which we already updated)
       for (const [systemName, system] of this.systems.entries()) {
@@ -244,6 +265,11 @@ export class GameEngine {
 
       // Flush all queued render commands
       this.renderSystem.flush();
+      
+      // Render dialogue system on top of everything
+      if (this.dialogueSystem) {
+        this.dialogueSystem.render(this.renderSystem);
+      }
 
       // Render debug information in development
       if (this.isDebugMode()) {
