@@ -28,6 +28,7 @@ export class FarmScene extends Scene {
         this.setupCollisions();
         this.initializeFarming();
         this.setupBeds();
+        this.spawnTestAnimals();
         
         // Add player to entities array
         if (this.player) {
@@ -273,6 +274,22 @@ export class FarmScene extends Scene {
         this.player = new Player(startX, startY, this.engine);
         this.player.init(this.engine);
         this.entities.push(this.player);
+        
+        // Give player some starter animal care items
+        this.giveStarterAnimalItems();
+    }
+    
+    // Give player basic animal care items
+    giveStarterAnimalItems() {
+        if (!this.player || !this.player.inventory) return;
+        
+        // Add animal feed items
+        this.player.inventory.addItem('hay', 10);
+        this.player.inventory.addItem('grass', 5);
+        this.player.inventory.addItem('seeds', 8);
+        this.player.inventory.addItem('grain', 6);
+        
+        console.log('Added starter animal care items to player inventory');
     }
     
     setupCollisions() {
@@ -342,6 +359,11 @@ export class FarmScene extends Scene {
             this.handleQuickLoad();
         }
         
+        // Handle animal interactions
+        if (inputManager.isKeyPressed('KeyX')) {
+            this.handleAnimalInteraction();
+        }
+        
         // Farm-specific update logic can go here
         // Base Scene class already handles entity updates
     }
@@ -371,6 +393,7 @@ export class FarmScene extends Scene {
             this.engine.collisionSystem.renderDebug(renderSystem);
             this.engine.sleepSystem?.renderDebug(renderSystem);
             this.engine.weatherSystem?.renderDebug(renderSystem);
+            this.engine.animalSystem?.renderDebug(renderSystem);
             renderSystem.renderCullingDebug();
             this.renderPerformanceStats(renderSystem);
         }
@@ -469,6 +492,90 @@ export class FarmScene extends Scene {
             }
         } catch (error) {
             console.error('Load system error:', error);
+        }
+    }
+    
+    // Spawn test animals for demonstration
+    spawnTestAnimals() {
+        if (!this.engine.animalSystem) return;
+        
+        // Spawn a cow near the barn area
+        const cow = this.engine.animalSystem.spawnAnimal('cow', 5 * 32, 4 * 32);
+        if (cow) {
+            console.log('Spawned test cow');
+        }
+        
+        // Spawn chickens near the coop area
+        const chicken1 = this.engine.animalSystem.spawnAnimal('chicken', 15 * 32, 3 * 32);
+        const chicken2 = this.engine.animalSystem.spawnAnimal('chicken', 16 * 32, 3 * 32);
+        
+        if (chicken1 && chicken2) {
+            console.log('Spawned test chickens');
+        }
+        
+        // Spawn a sheep
+        const sheep = this.engine.animalSystem.spawnAnimal('sheep', 7 * 32, 4 * 32);
+        if (sheep) {
+            console.log('Spawned test sheep');
+        }
+    }
+    
+    // Handle animal interaction (X key)
+    handleAnimalInteraction() {
+        if (!this.player || !this.engine.animalSystem) {
+            console.log('Animal system not available');
+            return;
+        }
+        
+        // Find nearest animal
+        const nearestAnimal = this.engine.animalSystem.getNearestAnimal(
+            this.player.x, 
+            this.player.y
+        );
+        
+        if (!nearestAnimal) {
+            console.log('No animal nearby');
+            return;
+        }
+        
+        // Get interaction options
+        const options = nearestAnimal.getInteractionOptions(this.player);
+        
+        if (options.length === 0) {
+            console.log(`${nearestAnimal.name} doesn't need anything right now`);
+            return;
+        }
+        
+        // For now, perform the first available interaction
+        // Future: Show interaction menu to player
+        const firstOption = options[0];
+        let result;
+        
+        switch (firstOption.action) {
+            case 'feed':
+                result = this.engine.animalSystem.handlePlayerInteraction(
+                    this.player, 'feed', nearestAnimal
+                );
+                break;
+            case 'pet':
+                result = this.engine.animalSystem.handlePlayerInteraction(
+                    this.player, 'pet', nearestAnimal
+                );
+                break;
+            case 'collect':
+                result = this.engine.animalSystem.handlePlayerInteraction(
+                    this.player, 'collect', nearestAnimal
+                );
+                break;
+            default:
+                result = { success: false, message: 'Unknown interaction' };
+        }
+        
+        // Display result
+        if (result.success) {
+            console.log(`✓ ${result.message}`);
+        } else {
+            console.log(`✗ ${result.message}`);
         }
     }
 

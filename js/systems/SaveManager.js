@@ -138,6 +138,11 @@ export class SaveManager {
             saveData.farming = this.serializeFarmingSystem();
         }
         
+        // Animal system data
+        if (this.gameEngine.animalSystem) {
+            saveData.animals = this.serializeAnimalSystem();
+        }
+        
         // World state
         saveData.world = {
             currentScene: this.gameEngine.sceneManager?.getCurrentScene()?.name || 'Farm',
@@ -202,6 +207,45 @@ export class SaveManager {
         return serializedData;
     }
     
+    serializeAnimalSystem() {
+        const animalSystem = this.gameEngine.animalSystem;
+        const serializedData = {
+            animals: {},
+            stats: animalSystem.stats || {},
+            buildings: {}
+        };
+        
+        // Serialize animals
+        for (const [animalId, animal] of animalSystem.animals || []) {
+            serializedData.animals[animalId] = {
+                x: animal.x,
+                y: animal.y,
+                animalType: animal.animalType,
+                happiness: animal.happiness,
+                hunger: animal.hunger,
+                lastFed: animal.lastFed,
+                lastPetted: animal.lastPetted,
+                lastProductGenerated: animal.lastProductGenerated,
+                timesInteractedToday: animal.timesInteractedToday,
+                hasProduct: animal.hasProduct,
+                productQuality: animal.productQuality,
+                currentState: animal.currentState
+            };
+        }
+        
+        // Serialize animal buildings
+        for (const [key, building] of animalSystem.animalBuildings || []) {
+            serializedData.buildings[key] = {
+                type: building.type,
+                position: building.position,
+                capacity: building.capacity,
+                animalTypes: building.animalTypes
+            };
+        }
+        
+        return serializedData;
+    }
+    
     // Load game state from save data
     loadGameState(saveData) {
         if (!this.validateSaveData(saveData)) {
@@ -228,6 +272,11 @@ export class SaveManager {
         // Load farming system
         if (saveData.farming && this.gameEngine.farmingSystem) {
             this.loadFarmingSystem(saveData.farming);
+        }
+        
+        // Load animal system
+        if (saveData.animals && this.gameEngine.animalSystem) {
+            this.loadAnimalSystem(saveData.animals);
         }
         
         // Load world state
@@ -344,6 +393,61 @@ export class SaveManager {
         }
         
         console.log(`Loaded ${farmingSystem.farmTiles.size} farm tiles`);
+    }
+    
+    loadAnimalSystem(animalData) {
+        const animalSystem = this.gameEngine.animalSystem;
+        const currentScene = this.gameEngine.sceneManager?.getCurrentScene();
+        
+        // Clear existing animals
+        animalSystem.cleanup();
+        
+        // Load stats
+        if (animalData.stats) {
+            animalSystem.stats = { ...animalSystem.stats, ...animalData.stats };
+        }
+        
+        // Load animal buildings
+        if (animalData.buildings) {
+            for (const [key, buildingData] of Object.entries(animalData.buildings)) {
+                animalSystem.animalBuildings.set(key, buildingData);
+            }
+        }
+        
+        // Load animals
+        if (animalData.animals && currentScene) {
+            import('../entities/Animal.js').then(({ Animal }) => {
+                for (const [animalId, animalSaveData] of Object.entries(animalData.animals)) {
+                    // Create new animal entity
+                    const animal = new Animal(
+                        animalSaveData.x,
+                        animalSaveData.y,
+                        animalSaveData.animalType,
+                        this.gameEngine
+                    );
+                    
+                    // Restore animal state
+                    animal.entityId = animalId;
+                    animal.happiness = animalSaveData.happiness || 75;
+                    animal.hunger = animalSaveData.hunger || 60;
+                    animal.lastFed = animalSaveData.lastFed || 0;
+                    animal.lastPetted = animalSaveData.lastPetted || 0;
+                    animal.lastProductGenerated = animalSaveData.lastProductGenerated || Date.now();
+                    animal.timesInteractedToday = animalSaveData.timesInteractedToday || 0;
+                    animal.hasProduct = animalSaveData.hasProduct || false;
+                    animal.productQuality = animalSaveData.productQuality || 'normal';
+                    animal.currentState = animalSaveData.currentState || animal.behaviorStates.IDLE;
+                    
+                    // Initialize and register animal
+                    animal.init(this.gameEngine);
+                    animalSystem.animals.set(animalId, animal);
+                    currentScene.entities.push(animal);
+                }
+                console.log(`Restored ${Object.keys(animalData.animals).length} animals`);
+            }).catch(error => {
+                console.error('Failed to load Animal class:', error);
+            });
+        }
     }
     
     loadWorldState(worldData) {

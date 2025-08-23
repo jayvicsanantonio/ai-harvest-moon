@@ -170,18 +170,18 @@
     - Create migration system for save format updates
     - _Requirements: 9.4, 9.6, 9.7_
 
-- [ ] 11. Create basic animal system
-  - [ ] 11.1 Implement animal entities
+- [x] 11. Create basic animal system
+  - [x] 11.1 Implement animal entities
     - Create Animal entity class with happiness/hunger stats
     - Build animal behavior state machines (fed/unfed/happy)
     - Add animal sprite rendering with idle animations
     - _Requirements: 3.1, 3.7_
-  - [ ] 11.2 Add animal care mechanics
+  - [x] 11.2 Add animal care mechanics
     - Implement daily feeding system with happiness effects
     - Add petting interactions that increase relationship levels
     - Create animal happiness tracking with visual indicators
     - _Requirements: 3.2, 3.3, 3.6_
-  - [ ] 11.3 Implement product collection
+  - [x] 11.3 Implement product collection
     - Add daily product generation based on animal happiness
     - Create collection mechanics for milk, eggs, and wool
     - Implement product quality system tied to care level
