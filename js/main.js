@@ -3,6 +3,8 @@
 
 import { GameEngine } from './engine/GameEngine.js';
 import { FarmScene } from './scenes/FarmScene.js';
+import { VillageScene } from './scenes/VillageScene.js';
+import { InteriorScene } from './scenes/InteriorScene.js';
 import { AssetLoader } from './utils/AssetLoader.js';
 
 class Game {
@@ -31,9 +33,8 @@ class Game {
             console.log('Loading game assets...');
             await this.assetLoader.loadAll();
             
-            // Initialize scene after assets are loaded
-            const farmScene = new FarmScene();
-            this.engine.setScene(farmScene);
+            // Setup scenes after assets are loaded
+            this.setupScenes();
             
             this.isInitialized = true;
             console.log('Game initialized successfully');
@@ -41,6 +42,20 @@ class Game {
             console.error('Failed to initialize game:', error);
             this.showError('Failed to start game. Please refresh and try again.');
         }
+    }
+    
+    setupScenes() {
+        // Register all game scenes with the SceneManager
+        this.engine.sceneManager.registerScene('Farm', FarmScene);
+        this.engine.sceneManager.registerScene('Village', VillageScene);
+        this.engine.sceneManager.registerScene('House', () => new InteriorScene('house'));
+        this.engine.sceneManager.registerScene('Shop', () => new InteriorScene('shop'));
+        this.engine.sceneManager.registerScene('Barn', () => new InteriorScene('barn'));
+        
+        // Start with Farm scene
+        this.engine.sceneManager.transitionToScene('Farm');
+        
+        console.log('Scenes initialized and Farm scene loaded');
     }
 
     start() {

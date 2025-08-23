@@ -1,6 +1,8 @@
 // Advanced rendering system with sprite batching and camera controls
 // Handles Canvas 2D rendering with optimization for pixel art games
 
+import { ViewportCulling } from './ViewportCulling.js';
+
 export class RenderSystem {
     constructor(canvas, ctx, assetManager = null) {
         this.canvas = canvas;
@@ -25,8 +27,13 @@ export class RenderSystem {
         this.stats = {
             drawCalls: 0,
             spritesRendered: 0,
-            batchesUsed: 0
+            batchesUsed: 0,
+            culledSprites: 0,
+            totalSprites: 0
         };
+        
+        // Viewport culling system
+        this.viewportCulling = new ViewportCulling();
         
         // Viewport culling bounds
         this.cullBounds = {
@@ -93,6 +100,8 @@ export class RenderSystem {
         this.stats.drawCalls = 0;
         this.stats.spritesRendered = 0;
         this.stats.batchesUsed = 0;
+        this.stats.culledSprites = 0;
+        this.stats.totalSprites = 0;
         
         // Clear render queue
         this.renderQueue = [];
@@ -102,10 +111,14 @@ export class RenderSystem {
         this.clearColor = color;
     }
     
-    // Queue a sprite for rendering
+    // Queue a sprite for rendering with enhanced culling
     drawSprite(sprite, x, y, width = 32, height = 32, options = {}) {
-        // Viewport culling
-        if (!this.isInViewport(x, y, width, height)) {
+        this.stats.totalSprites++;
+        
+        // Enhanced viewport culling using ViewportCulling system
+        const spriteObject = { x, y, width, height };
+        if (!this.viewportCulling.isVisible(spriteObject, this.camera)) {
+            this.stats.culledSprites++;
             return;
         }
         
@@ -422,7 +435,47 @@ export class RenderSystem {
     }
     
     getStats() {
-        return { ...this.stats };
+        const cullRatio = this.stats.totalSprites > 0 ? 
+            (this.stats.culledSprites / this.stats.totalSprites) : 0;
+            
+        return { 
+            ...this.stats,
+            cullRatio,
+            cullPercentage: Math.round(cullRatio * 100),
+            viewportCullingStats: this.viewportCulling.getStats()
+        };
+    }
+    
+    // Enable/disable viewport culling
+    setCullingEnabled(enabled) {
+        this.viewportCulling.setCullingEnabled(enabled);
+    }
+    
+    // Set culling margin for different scenarios
+    setCullingMargin(margin) {
+        this.viewportCulling.setDefaultMargin(margin);
+    }
+    
+    // Cull a list of entities before rendering
+    cullEntities(entities, deltaTime = 0) {
+        if (deltaTime > 0) {
+            return this.viewportCulling.cullEntitiesWithPrediction(entities, this.camera, deltaTime);
+        } else {
+            return this.viewportCulling.cullObjects(entities, this.camera);
+        }
+    }
+    
+    // Render debug culling information
+    renderCullingDebug() {
+        this.viewportCulling.renderDebugBounds(this, this.camera);
+        
+        // Show culling stats as text
+        const stats = this.getStats();
+        this.drawText(
+            `Culled: ${stats.culledSprites}/${stats.totalSprites} (${stats.cullPercentage}%)`,
+            10, this.canvas.height - 20,
+            { color: '#ffffff', layer: 1000 }
+        );
     }
     
     resize(width, height) {

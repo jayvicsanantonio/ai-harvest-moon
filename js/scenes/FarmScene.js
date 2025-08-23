@@ -1,37 +1,166 @@
 // Farm scene containing the player's farmland and basic gameplay
 // Manages farm layout, player movement, and farming interactions
 
+import { Scene } from '../engine/Scene.js';
 import { Player } from '../entities/Player.js';
+import { TileMap } from '../engine/TileMap.js';
 
-export class FarmScene {
+export class FarmScene extends Scene {
     constructor() {
-        this.engine = null;
+        super('Farm');
         this.player = null;
-        this.tiles = [];
-        this.entities = [];
+        this.tileMap = null;
     }
 
-    init(engine) {
-        this.engine = engine;
+    // Override Scene's load method for farm-specific initialization
+    async load() {
+        console.log('Loading Farm scene...');
+        
+        // Queue farm-specific assets
+        this.queueFarmAssets();
+        
+        // Setup farm layout
         this.setupFarmLayout();
         this.setupAnimations();
         this.createPlayer();
         this.setupCollisions();
+        this.initializeFarming();
+        
+        // Add player to entities array
+        if (this.player) {
+            this.addEntity(this.player);
+        }
+    }
+    
+    // Queue farm-specific assets
+    queueFarmAssets() {
+        // Farm tiles and objects
+        this.queueAsset('grass_tile', 'sprites/environment/grass.png');
+        this.queueAsset('dirt_tile', 'sprites/environment/dirt.png');
+        this.queueAsset('farmland_tile', 'sprites/environment/farmland.png');
+        this.queueAsset('water_tile', 'sprites/environment/water.png');
+        this.queueAsset('stone_tile', 'sprites/environment/stone.png');
+        this.queueAsset('tree', 'sprites/objects/tree.png');
+        this.queueAsset('rock', 'sprites/objects/rock.png');
+        this.queueAsset('fence', 'sprites/objects/fence.png');
+        
+        // Crop sprites for all growth stages
+        const cropTypes = ['turnip', 'potato', 'carrot', 'corn', 'tomato'];
+        const growthStages = ['seed', 'sprout', 'young', 'mature', 'ready'];
+        
+        for (const crop of cropTypes) {
+            for (const stage of growthStages) {
+                this.queueAsset(`${crop}_${stage}`, `sprites/crops/${crop}_${stage}.png`);
+            }
+        }
     }
 
     setupFarmLayout() {
-        // Create a simple 20x15 tile farm layout
-        this.tiles = [];
-        for (let y = 0; y < 15; y++) {
-            this.tiles[y] = [];
-            for (let x = 0; x < 20; x++) {
-                // Simple grass tiles for now
-                this.tiles[y][x] = {
-                    type: 'grass',
-                    farmable: y > 5 && y < 12 && x > 2 && x < 17,
-                    solid: false
-                };
+        // Create a 20x15 tile farm with TileMap system
+        const mapWidth = 20;
+        const mapHeight = 15;
+        this.tileMap = new TileMap(mapWidth, mapHeight, 32);
+        
+        // Define tile properties
+        this.tileMap.tileProperties.set(1, { type: 'grass', farmable: true, solid: false });
+        this.tileMap.tileProperties.set(2, { type: 'dirt', farmable: true, solid: false });
+        this.tileMap.tileProperties.set(3, { type: 'farmland', farmable: true, solid: false });
+        this.tileMap.tileProperties.set(4, { type: 'water', farmable: false, solid: true });
+        this.tileMap.tileProperties.set(5, { type: 'stone', farmable: false, solid: true });
+        this.tileMap.tileProperties.set(10, { type: 'tree', farmable: false, solid: true });
+        this.tileMap.tileProperties.set(11, { type: 'rock', farmable: false, solid: true });
+        this.tileMap.tileProperties.set(12, { type: 'fence', farmable: false, solid: true });
+        
+        // Create basic farm layout
+        this.generateFarmLayout(mapWidth, mapHeight);
+        
+        console.log('Farm layout created with TileMap system');
+    }
+    
+    generateFarmLayout(width, height) {
+        // Fill background with grass
+        for (let y = 0; y < height; y++) {
+            for (let x = 0; x < width; x++) {
+                this.tileMap.setTile(x, y, 1, 'background'); // Grass tile
             }
+        }
+        
+        // Add farmable area in the center
+        const farmStartX = 3;
+        const farmEndX = 16;
+        const farmStartY = 6;
+        const farmEndY = 11;
+        
+        for (let y = farmStartY; y <= farmEndY; y++) {
+            for (let x = farmStartX; x <= farmEndX; x++) {
+                this.tileMap.setTile(x, y, 2, 'objects'); // Dirt tile for farmable area
+            }
+        }
+        
+        // Add some decorative objects
+        this.addFarmDecorations(width, height);
+        
+        // Add water feature
+        this.addWaterFeature(width, height);
+        
+        // Create boundary with stones
+        this.addBoundaryStones(width, height);
+    }
+    
+    addFarmDecorations(width, height) {
+        // Add some trees around the farm
+        const treePositions = [
+            {x: 1, y: 2}, {x: 4, y: 1}, {x: 17, y: 3},
+            {x: 2, y: 13}, {x: 18, y: 12}, {x: 1, y: 8}
+        ];
+        
+        for (const pos of treePositions) {
+            if (pos.x < width && pos.y < height) {
+                this.tileMap.setTile(pos.x, pos.y, 10, 'objects'); // Tree
+            }
+        }
+        
+        // Add some rocks
+        const rockPositions = [
+            {x: 6, y: 2}, {x: 15, y: 4}, {x: 3, y: 12}
+        ];
+        
+        for (const pos of rockPositions) {
+            if (pos.x < width && pos.y < height) {
+                this.tileMap.setTile(pos.x, pos.y, 11, 'objects'); // Rock
+            }
+        }
+    }
+    
+    addWaterFeature(width, height) {
+        // Add small pond in corner
+        const pondPositions = [
+            {x: 17, y: 13}, {x: 18, y: 13}, {x: 19, y: 13},
+            {x: 17, y: 14}, {x: 18, y: 14}, {x: 19, y: 14}
+        ];
+        
+        for (const pos of pondPositions) {
+            if (pos.x < width && pos.y < height) {
+                this.tileMap.setTile(pos.x, pos.y, 4, 'objects'); // Water
+            }
+        }
+    }
+    
+    addBoundaryStones(width, height) {
+        // Add stone boundaries at map edges (selective placement)
+        const boundaryPositions = [
+            // Top boundary (partial)
+            {x: 0, y: 0}, {x: 3, y: 0}, {x: 7, y: 0}, {x: 12, y: 0}, {x: 19, y: 0},
+            // Bottom boundary (partial)  
+            {x: 0, y: 14}, {x: 5, y: 14}, {x: 10, y: 14}, {x: 15, y: 14},
+            // Left boundary (partial)
+            {x: 0, y: 3}, {x: 0, y: 7}, {x: 0, y: 11},
+            // Right boundary (partial)
+            {x: 19, y: 2}, {x: 19, y: 6}, {x: 19, y: 9}
+        ];
+        
+        for (const pos of boundaryPositions) {
+            this.tileMap.setTile(pos.x, pos.y, 5, 'objects'); // Stone
         }
     }
     
@@ -141,85 +270,85 @@ export class FarmScene {
     }
     
     setupCollisions() {
-        if (!this.engine.collisionSystem) return;
+        if (!this.engine.collisionSystem || !this.tileMap) return;
         
-        const tileSize = 32;
+        // Integrate TileMap collision data with CollisionSystem
+        for (const [posKey, collision] of this.tileMap.collisionData.entries()) {
+            const [x, y] = posKey.split(',').map(n => parseInt(n));
+            
+            this.engine.collisionSystem.addTileCollision(
+                x, y, 
+                collision.solid, 
+                { 
+                    type: collision.properties.type || 'obstacle',
+                    tileId: collision.tileId,
+                    properties: collision.properties
+                }
+            );
+        }
         
-        // Add collision boundaries around the map edges
-        for (let y = 0; y < this.tiles.length; y++) {
-            for (let x = 0; x < this.tiles[y].length; x++) {
-                const tile = this.tiles[y][x];
-                
-                // Add solid collision for map boundaries
-                if (x === 0 || x === this.tiles[y].length - 1 || 
-                    y === 0 || y === this.tiles.length - 1) {
-                    this.engine.collisionSystem.addTileCollision(x, y, true, { type: 'boundary' });
-                }
-                
-                // Add collision for non-farmable areas (rocks, trees, etc.)
-                if (!tile.farmable && x > 0 && x < this.tiles[y].length - 1 && 
-                    y > 0 && y < this.tiles.length - 1) {
-                    // Some areas can be obstacles
-                    if (Math.random() < 0.1) { // 10% chance of obstacle
-                        this.engine.collisionSystem.addTileCollision(x, y, true, { type: 'obstacle' });
-                        tile.solid = true;
-                    }
-                }
-            }
+        console.log(`Set up ${this.tileMap.collisionData.size} collision tiles`);
+    }
+    
+    // Initialize farming system for this scene
+    initializeFarming() {
+        if (this.engine?.farmingSystem) {
+            this.engine.farmingSystem.init(this.engine);
+            console.log('FarmingSystem initialized for Farm scene');
         }
     }
 
-    update(deltaTime, inputManager) {
-        // Update all entities (including player)
-        for (const entity of this.entities) {
-            if (entity.update) {
-                entity.update(deltaTime, inputManager);
-            }
-        }
+    // Override Scene's updateScene method for farm-specific updates
+    updateScene(deltaTime, inputManager) {
+        // Farm-specific update logic can go here
+        // Base Scene class already handles entity updates
     }
 
-    render(renderSystem) {
-        const tileSize = 32;
-        
-        // Render tiles using the new rendering system
-        for (let y = 0; y < this.tiles.length; y++) {
-            for (let x = 0; x < this.tiles[y].length; x++) {
-                const tile = this.tiles[y][x];
-                
-                // Use different colors for different tile types
-                let color = '#4caf50'; // Default grass
-                if (tile.farmable) {
-                    color = '#8bc34a'; // Farmable land
-                }
-                if (tile.solid) {
-                    color = '#795548'; // Obstacles/rocks
-                }
-                
-                renderSystem.drawRect(
-                    x * tileSize, 
-                    y * tileSize, 
-                    tileSize, 
-                    tileSize, 
-                    color,
-                    { 
-                        layer: 0,
-                        stroke: true,
-                        strokeColor: '#2e7d32',
-                        strokeWidth: 1
-                    }
-                );
-            }
+    // Override Scene's renderScene method for farm-specific rendering
+    renderScene(renderSystem) {
+        // Render TileMap using the integrated system
+        if (this.tileMap) {
+            this.tileMap.render(renderSystem, renderSystem.camera);
         }
 
-        // Render player using the new entity system
-        if (this.player) {
-            this.player.render(renderSystem);
-        }
+        // Call parent class renderScene to handle entity rendering with culling
+        super.renderScene(renderSystem);
         
-        // Render debug collision information if debug mode is enabled
+        // Render debug information if debug mode is enabled
         if (this.engine.isDebugMode()) {
             this.engine.collisionSystem.renderDebug(renderSystem);
+            renderSystem.renderCullingDebug();
+            this.renderPerformanceStats(renderSystem);
         }
+    }
+    
+    // Render performance statistics in debug mode
+    renderPerformanceStats(renderSystem) {
+        const renderStats = renderSystem.getStats();
+        const tileStats = this.tileMap ? this.tileMap.getRenderStats() : null;
+        
+        let yOffset = 40;
+        const statColor = '#00ff00';
+        
+        // Render statistics
+        renderSystem.drawText(
+            `Entities: ${this.entities.length} total, ${renderStats.totalSprites - renderStats.culledSprites} visible`,
+            10, yOffset, { color: statColor, layer: 1000 }
+        );
+        yOffset += 20;
+        
+        if (tileStats) {
+            renderSystem.drawText(
+                `Tiles: ${tileStats.tilesRendered}/${tileStats.totalTilesInView} rendered (${Math.round(tileStats.cullRatio * 100)}% culled)`,
+                10, yOffset, { color: statColor, layer: 1000 }
+            );
+            yOffset += 20;
+        }
+        
+        renderSystem.drawText(
+            `Batches: ${renderStats.batchesUsed}, Draw calls: ${renderStats.drawCalls}`,
+            10, yOffset, { color: statColor, layer: 1000 }
+        );
     }
 
     cleanup() {

@@ -46,35 +46,35 @@
     - Create stamina regeneration over time and through sleep
     - _Requirements: 6.2, 6.5, 6.6_
 
-- [ ] 4. Build asset management and sprite system
-  - [ ] 4.1 Create AssetManager for resource loading
+- [x] 4. Build asset management and sprite system
+  - [x] 4.1 Create AssetManager for resource loading
     - Build AssetManager class with sprite and audio loading
     - Implement progressive loading with loading screens
     - Add error handling for missing or corrupted assets
     - _Requirements: 10.2, 10.3_
-  - [ ] 4.2 Implement sprite batching system
+  - [x] 4.2 Implement sprite batching system
     - Create sprite batch renderer for efficient drawing
     - Group similar sprites into single draw calls
     - Add texture atlas support for combined sprite sheets
     - _Requirements: 10.1, 10.2_
-  - [ ] 4.3 Add animation management
+  - [x] 4.3 Add animation management
     - Build Animation class for sprite frame sequences
     - Implement animation state machine for character states
     - Add animation blending and transition effects
     - _Requirements: 1.2, 10.1_
 
-- [ ] 5. Implement tile-based world rendering
-  - [ ] 5.1 Create tile map system
+- [x] 5. Implement tile-based world rendering
+  - [x] 5.1 Create tile map system
     - Build TileMap class for loading and rendering tile-based maps
     - Implement multi-layer tile rendering (background, objects, foreground)
     - Add tile collision data and property management
     - _Requirements: 1.1, 10.4_
-  - [ ] 5.2 Add viewport culling optimization
+  - [x] 5.2 Add viewport culling optimization
     - Implement camera-based viewport culling for tiles and sprites
     - Only render objects within visible screen boundaries
     - Add margin buffer for smooth scrolling transitions
     - _Requirements: 10.1, 10.4_
-  - [ ] 5.3 Create scene management system
+  - [x] 5.3 Create scene management system
     - Build Scene base class with update/render lifecycle
     - Implement scene transitions with asset loading/unloading
     - Add FarmScene, VillageScene, and InteriorScene classes

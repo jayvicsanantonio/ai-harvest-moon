@@ -6,7 +6,9 @@ import { InputManager } from './InputManager.js';
 import { CollisionSystem } from './CollisionSystem.js';
 import { AnimationSystem } from './AnimationSystem.js';
 import { AssetManager } from './AssetManager.js';
+import { SceneManager } from './SceneManager.js';
 import { StaminaSystem } from '../systems/StaminaSystem.js';
+import { FarmingSystem } from '../systems/FarmingSystem.js';
 
 export class GameEngine {
   constructor(canvas) {
@@ -52,8 +54,14 @@ export class GameEngine {
     // Stamina system
     this.staminaSystem = null;
     
+    // Farming system
+    this.farmingSystem = null;
+    
     // Asset management
     this.assetManager = null;
+    
+    // Scene management
+    this.sceneManager = null;
   }
 
   async init() {
@@ -85,6 +93,14 @@ export class GameEngine {
     // Initialize stamina system
     this.staminaSystem = new StaminaSystem();
     this.registerSystem('stamina', this.staminaSystem);
+    
+    // Initialize farming system
+    this.farmingSystem = new FarmingSystem();
+    this.registerSystem('farming', this.farmingSystem);
+    
+    // Initialize scene manager
+    this.sceneManager = new SceneManager(this);
+    this.registerSystem('scene', this.sceneManager);
 
     console.log("GameEngine initialized");
   }
@@ -110,8 +126,7 @@ export class GameEngine {
     this.deltaTime = Math.min(currentTime - this.lastTime, this.maxDeltaTime);
     this.lastTime = currentTime;
 
-    // Handle scene transitions
-    this.handleSceneTransition();
+    // Scene transitions are now handled by SceneManager
 
     // Update phase
     const updateStart = performance.now();
@@ -137,9 +152,9 @@ export class GameEngine {
       // Update input system first to capture frame-based input states
       this.inputManager.update();
       
-      // Update current scene
-      if (this.currentScene && this.currentScene.update) {
-        this.currentScene.update(deltaTime, this.inputManager);
+      // Update scene manager (handles current scene)
+      if (this.sceneManager) {
+        this.sceneManager.update(deltaTime, this.inputManager);
       }
 
       // Update all registered systems (except input which we already updated)
@@ -164,8 +179,9 @@ export class GameEngine {
       // Clear and begin render frame
       this.renderSystem.clear();
 
-      if (this.currentScene && this.currentScene.render) {
-        this.currentScene.render(this.renderSystem);
+      // Render current scene through scene manager
+      if (this.sceneManager) {
+        this.sceneManager.render(this.renderSystem);
       }
 
       // Flush all queued render commands
@@ -255,34 +271,7 @@ export class GameEngine {
     window.dispatchEvent(errorEvent);
   }
 
-  setScene(scene) {
-    if (this.isTransitioning) {
-      this.nextScene = scene;
-      return;
-    }
-
-    this.nextScene = scene;
-    this.isTransitioning = true;
-  }
-
-  handleSceneTransition() {
-    if (!this.isTransitioning || !this.nextScene) return;
-
-    // Cleanup current scene
-    if (this.currentScene && this.currentScene.cleanup) {
-      this.currentScene.cleanup();
-    }
-
-    // Set new scene
-    this.currentScene = this.nextScene;
-    this.nextScene = null;
-    this.isTransitioning = false;
-
-    // Initialize new scene
-    if (this.currentScene && this.currentScene.init) {
-      this.currentScene.init(this);
-    }
-  }
+  // Scene management is now handled by SceneManager
 
   updateFPSCounter(deltaTime) {
     this.frameCount++;

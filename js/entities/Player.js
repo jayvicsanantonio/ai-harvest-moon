@@ -38,8 +38,16 @@ export class Player {
         this.inventory = new Map();
         this.money = 500;
         this.tools = new Map();
+        this.seeds = {
+            turnip: 10,
+            potato: 5,
+            carrot: 5,
+            corn: 2,
+            tomato: 2
+        };
         this.relationships = new Map();
         this.currentTool = null;
+        this.currentSeed = 'turnip';
         
         // References to game systems
         this.gameEngine = gameEngine;
@@ -78,7 +86,8 @@ export class Player {
     initializeTools() {
         // Start with basic tools
         this.tools.set('hoe', { durability: 100, efficiency: 1 });
-        this.tools.set('watering_can', { water: 20, capacity: 20 });
+        this.tools.set('watering_can', { water: 20, capacity: 20, efficiency: 1 });
+        this.tools.set('seeds', { seeds: this.seeds, efficiency: 1 });
         this.tools.set('axe', { durability: 100, efficiency: 1 });
         this.tools.set('pickaxe', { durability: 100, efficiency: 1 });
         this.currentTool = 'hoe';
@@ -191,6 +200,21 @@ export class Player {
             if (this.gameEngine.staminaSystem) {
                 this.gameEngine.staminaSystem.stopActivity(this.entityId);
             }
+        }
+        
+        // Handle farming interactions
+        if (inputManager.isKeyPressed('Space')) {
+            this.handleFarmingAction();
+        }
+        
+        // Handle tool switching
+        if (inputManager.isKeyPressed('KeyQ')) {
+            this.switchTool();
+        }
+        
+        // Handle seed switching
+        if (inputManager.isKeyPressed('KeyE')) {
+            this.switchSeed();
         }
         
         // Update animation state machine
@@ -413,6 +437,142 @@ export class Player {
             return this.gameEngine.staminaSystem.getStamina(this.entityId);
         }
         return this.stamina;
+    }
+    
+    // Handle farming actions based on current tool and position
+    handleFarmingAction() {
+        if (!this.gameEngine.farmingSystem) return;
+        
+        const farmingSystem = this.gameEngine.farmingSystem;
+        const currentTool = this.tools.get(this.currentTool);
+        
+        if (!currentTool) {
+            console.log(`No ${this.currentTool} available!`);
+            return;
+        }
+        
+        // Calculate target position based on facing direction
+        const targetX = this.x + (this.facing === 'right' ? 32 : this.facing === 'left' ? -32 : 0);
+        const targetY = this.y + (this.facing === 'down' ? 32 : this.facing === 'up' ? -32 : 0);
+        
+        // Check if target position is farmable
+        if (!farmingSystem.isFarmableTile(targetX, targetY)) {
+            console.log('Cannot farm here - not a farmable area');
+            return;
+        }
+        
+        // Get farm tile to check current state
+        const farmTile = farmingSystem.getFarmTile(targetX, targetY);
+        
+        // Perform action based on tool type and soil state
+        let actionPerformed = false;
+        
+        if (this.currentTool === 'hoe') {
+            if (farmTile.soilState === farmingSystem.soilStates.UNTILLED) {
+                actionPerformed = farmingSystem.tillSoil(targetX, targetY, this, {
+                    type: 'hoe',
+                    durability: currentTool.durability,
+                    efficiency: currentTool.efficiency
+                });
+                
+                if (actionPerformed) {
+                    // Update tool durability
+                    currentTool.durability = Math.max(0, currentTool.durability - 1);
+                }
+            } else {
+                console.log('Soil is already tilled or has a crop');
+            }
+        } else if (this.currentTool === 'watering_can') {
+            if (farmTile.soilState !== farmingSystem.soilStates.UNTILLED) {
+                actionPerformed = farmingSystem.waterSoil(targetX, targetY, this, {
+                    type: 'watering_can',
+                    water: currentTool.water,
+                    capacity: currentTool.capacity,
+                    efficiency: currentTool.efficiency
+                });
+                
+                if (actionPerformed) {
+                    // Update watering can water level
+                    currentTool.water = Math.max(0, currentTool.water - 1);
+                }
+            } else {
+                console.log('Till the soil first before watering');
+            }
+        } else if (this.currentTool === 'seeds') {
+            if (farmTile.soilState === farmingSystem.soilStates.TILLED || 
+                farmTile.soilState === farmingSystem.soilStates.WATERED) {
+                const tileX = Math.floor(targetX / 32);
+                const tileY = Math.floor(targetY / 32);
+                
+                actionPerformed = farmingSystem.plantSeed(tileX, tileY, this.currentSeed, this, {
+                    type: 'seeds',
+                    seeds: currentTool.seeds,
+                    efficiency: currentTool.efficiency
+                });
+                
+                if (actionPerformed) {
+                    console.log(`Planted ${this.currentSeed} seed`);
+                }
+            } else {
+                console.log('Prepare the soil first (till and optionally water)');
+            }
+        }
+        
+        // Check if there's a harvestable crop (hands - no tool required)
+        if (!actionPerformed) {
+            const tileX = Math.floor(targetX / 32);
+            const tileY = Math.floor(targetY / 32);
+            const crop = farmingSystem.getCropAt(tileX, tileY);
+            
+            if (crop && crop.isReadyForHarvest()) {
+                const harvestResult = farmingSystem.harvestCrop(tileX, tileY, this);
+                if (harvestResult) {
+                    console.log(`Harvested ${harvestResult.amount}x ${harvestResult.itemType}!`);
+                    actionPerformed = true;
+                }
+            }
+        }
+        
+        // Visual feedback
+        if (actionPerformed) {
+            console.log(`Used ${this.currentTool} at position (${Math.floor(targetX/32)}, ${Math.floor(targetY/32)})`);
+        }
+    }
+    
+    // Switch between available seed types
+    switchSeed() {
+        const availableSeeds = Object.keys(this.seeds).filter(seedType => this.seeds[seedType] > 0);
+        
+        if (availableSeeds.length === 0) {
+            console.log('No seeds available!');
+            return;
+        }
+        
+        const currentIndex = availableSeeds.indexOf(this.currentSeed);
+        const nextIndex = currentIndex === -1 ? 0 : (currentIndex + 1) % availableSeeds.length;
+        
+        this.currentSeed = availableSeeds[nextIndex];
+        console.log(`Selected ${this.currentSeed} seeds (${this.seeds[this.currentSeed]} remaining)`);
+    }
+    
+    // Switch between available tools
+    switchTool() {
+        const toolTypes = Array.from(this.tools.keys());
+        const currentIndex = toolTypes.indexOf(this.currentTool);
+        const nextIndex = (currentIndex + 1) % toolTypes.length;
+        
+        this.currentTool = toolTypes[nextIndex];
+        console.log(`Switched to ${this.currentTool}`);
+        
+        // Show tool status
+        const tool = this.tools.get(this.currentTool);
+        if (tool) {
+            if (this.currentTool === 'watering_can') {
+                console.log(`${this.currentTool}: ${tool.water}/${tool.capacity} water`);
+            } else {
+                console.log(`${this.currentTool}: ${tool.durability} durability`);
+            }
+        }
     }
     
     render(renderSystem) {
