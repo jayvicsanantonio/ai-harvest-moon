@@ -4,12 +4,14 @@
 import { Scene } from '../engine/Scene.js';
 import { Player } from '../entities/Player.js';
 import { TileMap } from '../engine/TileMap.js';
+import { HUD } from '../ui/HUD.js';
 
 export class FarmScene extends Scene {
     constructor() {
         super('Farm');
         this.player = null;
         this.tileMap = null;
+        this.hud = null;
     }
 
     // Override Scene's load method for farm-specific initialization
@@ -25,11 +27,15 @@ export class FarmScene extends Scene {
         this.createPlayer();
         this.setupCollisions();
         this.initializeFarming();
+        this.setupBeds();
         
         // Add player to entities array
         if (this.player) {
             this.addEntity(this.player);
         }
+        
+        // Initialize HUD
+        this.hud = new HUD(this.engine);
     }
     
     // Queue farm-specific assets
@@ -297,9 +303,36 @@ export class FarmScene extends Scene {
             console.log('FarmingSystem initialized for Farm scene');
         }
     }
+    
+    // Setup bed locations in the farm
+    setupBeds() {
+        if (this.engine?.sleepSystem) {
+            // Add a bed in the farmhouse area (top-left corner)
+            this.engine.sleepSystem.registerBed('farm_bed', 2 * 32, 2 * 32, {
+                width: 64,
+                height: 32,
+                comfort: 1.0,
+                quality: 'basic',
+                ownerId: this.player?.entityId || 'player'
+            });
+            
+            console.log('Bed locations setup for Farm scene');
+        }
+    }
 
     // Override Scene's updateScene method for farm-specific updates
     updateScene(deltaTime, inputManager) {
+        // Update HUD
+        if (this.hud) {
+            this.hud.update(deltaTime);
+            this.hud.handleInput(inputManager);
+        }
+        
+        // Handle sleep interactions
+        if (inputManager.isKeyPressed('KeyZ')) {
+            this.handleSleepInteraction();
+        }
+        
         // Farm-specific update logic can go here
         // Base Scene class already handles entity updates
     }
@@ -314,9 +347,15 @@ export class FarmScene extends Scene {
         // Call parent class renderScene to handle entity rendering with culling
         super.renderScene(renderSystem);
         
+        // Render HUD
+        if (this.hud) {
+            this.hud.render(renderSystem);
+        }
+        
         // Render debug information if debug mode is enabled
         if (this.engine.isDebugMode()) {
             this.engine.collisionSystem.renderDebug(renderSystem);
+            this.engine.sleepSystem?.renderDebug(renderSystem);
             renderSystem.renderCullingDebug();
             this.renderPerformanceStats(renderSystem);
         }
@@ -350,9 +389,28 @@ export class FarmScene extends Scene {
             10, yOffset, { color: statColor, layer: 1000 }
         );
     }
+    
+    // Handle sleep interaction when Z key is pressed
+    handleSleepInteraction() {
+        if (!this.player || !this.engine.sleepSystem) return;
+        
+        const result = this.engine.sleepSystem.handleBedInteraction(this.player);
+        
+        if (result.success) {
+            console.log(result.message);
+            
+            // Trigger HUD time update animation if available
+            if (this.hud && result.timeAdvanced) {
+                this.hud.triggerTimeUpdate();
+            }
+        } else {
+            console.log(result.message);
+        }
+    }
 
     cleanup() {
         // Clean up scene resources
         this.entities = [];
+        this.hud = null;
     }
 }

@@ -119,18 +119,18 @@
     - Add tool upgrade system with improved capabilities
     - _Requirements: 6.2, 6.4, 8.3_
 
-- [ ] 8. Implement day/night and time systems
-  - [ ] 8.1 Create calendar and time management
+- [x] 8. Implement day/night and time systems
+  - [x] 8.1 Create calendar and time management
     - Build Calendar class tracking days, seasons, and years
     - Implement day/night cycle with visual lighting changes
     - Add time progression and sleep mechanics
     - _Requirements: 5.5, 6.7_
-  - [ ] 8.2 Add sleep system for day advancement
+  - [x] 8.2 Add sleep system for day advancement
     - Create bed interaction to end current day
     - Implement day transition with stamina restoration
     - Add new day initialization with system updates
     - _Requirements: 6.6, 6.7_
-  - [ ] 8.3 Build basic HUD with time display
+  - [x] 8.3 Build basic HUD with time display
     - Create HUD UI showing current time and date
     - Add stamina bar with visual feedback
     - Display current season and weather status

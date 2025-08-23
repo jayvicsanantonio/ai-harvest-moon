@@ -41,6 +41,7 @@ export class FarmingSystem {
     init(gameEngine) {
         this.gameEngine = gameEngine;
         this.setupFarmableAreas();
+        this.setupTimeCallbacks();
     }
     
     // Setup farmable areas based on current scene
@@ -69,6 +70,43 @@ export class FarmingSystem {
         }
         
         console.log(`Registered ${this.farmTiles.size} farmable tiles`);
+    }
+    
+    // Setup time system callbacks for daily events
+    setupTimeCallbacks() {
+        if (this.gameEngine?.timeSystem) {
+            this.gameEngine.timeSystem.on('onDayChange', (timeData) => {
+                this.onNewDay(timeData);
+            });
+            
+            console.log('FarmingSystem connected to TimeSystem events');
+        }
+    }
+    
+    // Handle new day events
+    onNewDay(timeData) {
+        console.log(`FarmingSystem: New day started - ${timeData.formattedDate}`);
+        
+        // Update crop growth for the new day
+        for (const [position, crop] of this.activeCrops.entries()) {
+            // Crops get a growth boost each new day
+            const dailyGrowthBoost = 2 * 60 * 1000; // 2 minutes of growth time
+            crop.stageStartTime -= dailyGrowthBoost;
+        }
+        
+        // Reset water levels slightly (simulate evaporation)
+        for (const [position, farmTile] of this.farmTiles.entries()) {
+            if (farmTile.waterLevel > 0) {
+                farmTile.waterLevel = Math.max(0, farmTile.waterLevel - 10);
+                
+                // Update soil state based on water level
+                if (farmTile.waterLevel <= 0 && farmTile.soilState === this.soilStates.WATERED) {
+                    farmTile.soilState = this.soilStates.TILLED;
+                }
+            }
+        }
+        
+        console.log(`Updated ${this.activeCrops.size} crops for new day`);
     }
     
     // Register a tile as farmable

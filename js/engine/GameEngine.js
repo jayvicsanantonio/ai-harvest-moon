@@ -10,6 +10,8 @@ import { SceneManager } from './SceneManager.js';
 import { StaminaSystem } from '../systems/StaminaSystem.js';
 import { FarmingSystem } from '../systems/FarmingSystem.js';
 import { ToolSystem } from '../systems/ToolSystem.js';
+import { TimeSystem } from '../systems/TimeSystem.js';
+import { SleepSystem } from '../systems/SleepSystem.js';
 
 export class GameEngine {
   constructor(canvas) {
@@ -61,6 +63,12 @@ export class GameEngine {
     // Tool system
     this.toolSystem = null;
     
+    // Time system
+    this.timeSystem = null;
+    
+    // Sleep system
+    this.sleepSystem = null;
+    
     // Asset management
     this.assetManager = null;
     
@@ -105,6 +113,14 @@ export class GameEngine {
     // Initialize tool system
     this.toolSystem = new ToolSystem();
     this.registerSystem('tool', this.toolSystem);
+    
+    // Initialize time system
+    this.timeSystem = new TimeSystem();
+    this.registerSystem('time', this.timeSystem);
+    
+    // Initialize sleep system
+    this.sleepSystem = new SleepSystem();
+    this.registerSystem('sleep', this.sleepSystem);
     
     // Initialize scene manager
     this.sceneManager = new SceneManager(this);
