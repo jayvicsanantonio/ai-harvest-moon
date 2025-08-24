@@ -21,6 +21,9 @@ import { DialogueSystem } from '../systems/DialogueSystem.js';
 import { FishingSystem } from '../systems/FishingSystem.js';
 import { MiningSystem } from '../systems/MiningSystem.js';
 import { CookingSystem } from '../systems/CookingSystem.js';
+import { ToolUpgradeSystem } from '../systems/ToolUpgradeSystem.js';
+import { BuildingUpgradeSystem } from '../systems/BuildingUpgradeSystem.js';
+import { AchievementSystem } from '../systems/AchievementSystem.js';
 
 export class GameEngine {
   constructor(canvas) {
@@ -108,6 +111,15 @@ export class GameEngine {
     
     // Cooking system
     this.cookingSystem = null;
+    
+    // Tool upgrade system
+    this.toolUpgradeSystem = null;
+    
+    // Building upgrade system
+    this.buildingUpgradeSystem = null;
+    
+    // Achievement system
+    this.achievementSystem = null;
   }
 
   async init() {
@@ -202,6 +214,21 @@ export class GameEngine {
     this.cookingSystem = new CookingSystem();
     this.cookingSystem.init(this);
     this.registerSystem('cooking', this.cookingSystem);
+    
+    // Initialize tool upgrade system
+    this.toolUpgradeSystem = new ToolUpgradeSystem();
+    this.toolUpgradeSystem.init(this);
+    this.registerSystem('toolUpgrade', this.toolUpgradeSystem);
+    
+    // Initialize building upgrade system
+    this.buildingUpgradeSystem = new BuildingUpgradeSystem();
+    this.buildingUpgradeSystem.init(this);
+    this.registerSystem('buildingUpgrade', this.buildingUpgradeSystem);
+    
+    // Initialize achievement system
+    this.achievementSystem = new AchievementSystem();
+    this.achievementSystem.init(this);
+    this.registerSystem('achievement', this.achievementSystem);
 
     console.log("GameEngine initialized");
   }
@@ -296,6 +323,11 @@ export class GameEngine {
       // Render dialogue system on top of everything
       if (this.dialogueSystem) {
         this.dialogueSystem.render(this.renderSystem);
+      }
+      
+      // Render achievement system (popups and notifications)
+      if (this.achievementSystem) {
+        this.achievementSystem.render(this.renderSystem);
       }
 
       // Render debug information in development

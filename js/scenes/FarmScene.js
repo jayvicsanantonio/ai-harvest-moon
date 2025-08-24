@@ -301,6 +301,20 @@ export class FarmScene extends Scene {
         this.player.inventory.addItem('milk', 1);
         this.player.inventory.addItem('egg', 2);
         
+        // Add upgrade materials
+        this.player.inventory.addItem('copper_ore', 8);
+        this.player.inventory.addItem('iron_ore', 5);
+        this.player.inventory.addItem('wood', 300);
+        this.player.inventory.addItem('stone', 200);
+        this.player.inventory.addItem('nails', 100);
+        this.player.inventory.addItem('hardwood', 50);
+        this.player.inventory.addItem('iron_bar', 30);
+        
+        // Add starting gold
+        if (this.player.gold === undefined) {
+            this.player.gold = 15000; // Increased for building upgrades
+        }
+        
         console.log('Added starter items (tools, food, and cooking ingredients) to player inventory');
     }
     
@@ -404,6 +418,21 @@ export class FarmScene extends Scene {
             this.handleCookingFinish();
         }
         
+        // Handle tool upgrade interactions (U key to open upgrade menu)
+        if (inputManager.isKeyPressed('KeyU')) {
+            this.handleToolUpgradeInteraction();
+        }
+        
+        // Handle building upgrade interactions (B key to open building menu)
+        if (inputManager.isKeyPressed('KeyB')) {
+            this.handleBuildingUpgradeInteraction();
+        }
+        
+        // Handle achievement viewing (A key to view achievements)
+        if (inputManager.isKeyPressed('KeyA')) {
+            this.handleAchievementView();
+        }
+        
         // Farm-specific update logic can go here
         // Base Scene class already handles entity updates
     }
@@ -438,6 +467,16 @@ export class FarmScene extends Scene {
         // Render cooking system
         if (this.engine.cookingSystem) {
             this.engine.cookingSystem.render(renderSystem);
+        }
+        
+        // Render tool upgrade system
+        if (this.engine.toolUpgradeSystem) {
+            this.engine.toolUpgradeSystem.render(renderSystem);
+        }
+        
+        // Render building upgrade system
+        if (this.engine.buildingUpgradeSystem) {
+            this.engine.buildingUpgradeSystem.render(renderSystem);
         }
         
         // Render debug information if debug mode is enabled
@@ -844,6 +883,173 @@ export class FarmScene extends Scene {
             console.log(`🎒 Added ${result.result.name} to inventory (+${result.experience} exp)`);
         } else {
             console.log(`✗ ${result.message}`);
+        }
+    }
+    
+    // Handle tool upgrade interaction when U key is pressed
+    handleToolUpgradeInteraction() {
+        if (!this.player || !this.engine.toolUpgradeSystem) {
+            console.log('Tool upgrade system not available');
+            return;
+        }
+        
+        const result = this.engine.toolUpgradeSystem.handlePlayerInteraction(
+            this.player, 'open_upgrade_menu'
+        );
+        
+        if (result.success) {
+            console.log(`🔨 ${result.message} (Gold: ${result.playerGold})`);
+            
+            // For demo purposes, auto-upgrade the first upgradeable tool
+            if (result.upgradableTools.length > 0) {
+                const firstTool = result.upgradableTools[0];
+                const firstUpgrade = firstTool.availableUpgrades[0];
+                
+                console.log(`Available upgrade: ${firstTool.tool.name} -> ${firstUpgrade.targetType}`);
+                console.log(`Cost: ${firstUpgrade.cost.gold} gold + materials: ${Object.entries(firstUpgrade.cost.materials).map(([mat, amt]) => `${amt}x ${mat}`).join(', ')}`);
+                
+                // Auto-attempt the upgrade
+                const upgradeResult = this.engine.toolUpgradeSystem.handlePlayerInteraction(
+                    this.player, 'upgrade_tool', {
+                        toolId: firstTool.tool.toolId,
+                        targetType: firstUpgrade.targetType,
+                        stationId: result.station.id
+                    }
+                );
+                
+                if (upgradeResult.success) {
+                    console.log(`🔨 ${upgradeResult.message}`);
+                    console.log(`✨ Your ${upgradeResult.tool.name} is now more efficient!`);
+                    
+                    // Trigger achievement
+                    this.engine.achievementSystem?.onToolUpgraded();
+                } else {
+                    console.log(`✗ ${upgradeResult.message}`);
+                }
+            } else {
+                console.log('No tools can be upgraded at this station');
+            }
+        } else {
+            console.log(`✗ ${result.message}`);
+        }
+    }
+    
+    // Handle building upgrade interaction when B key is pressed
+    handleBuildingUpgradeInteraction() {
+        if (!this.player || !this.engine.buildingUpgradeSystem) {
+            console.log('Building upgrade system not available');
+            return;
+        }
+        
+        const result = this.engine.buildingUpgradeSystem.handlePlayerInteraction(
+            this.player, 'open_building_menu'
+        );
+        
+        if (result.success) {
+            console.log(`🏗️ ${result.message} (Gold: ${result.playerGold})`);
+            
+            // For demo purposes, auto-upgrade the first upgradeable building
+            if (result.upgradableBuildings.length > 0) {
+                const firstBuilding = result.upgradableBuildings[0];
+                const firstUpgrade = firstBuilding.availableUpgrades[0];
+                
+                console.log(`Available upgrade: ${firstBuilding.building.buildingType.name} -> ${firstUpgrade.buildingType.name}`);
+                
+                if (firstUpgrade.buildingType.upgradeCost) {
+                    const cost = firstUpgrade.buildingType.upgradeCost;
+                    console.log(`Cost: ${cost.gold} gold + materials: ${Object.entries(cost.materials).map(([mat, amt]) => `${amt}x ${mat}`).join(', ')}`);
+                    console.log(`Construction time: ${Math.round(cost.constructionTime / 1000)}s`);
+                    
+                    // Auto-attempt the upgrade
+                    const upgradeResult = this.engine.buildingUpgradeSystem.handlePlayerInteraction(
+                        this.player, 'upgrade_building', {
+                            buildingId: firstBuilding.building.id,
+                            targetType: firstUpgrade.targetType,
+                            stationId: result.station.id
+                        }
+                    );
+                    
+                    if (upgradeResult.success) {
+                        console.log(`🏗️ ${upgradeResult.message}`);
+                        console.log(`📈 Building capacity will increase from ${firstBuilding.building.capacity} to ${firstUpgrade.buildingType.capacity}!`);
+                        
+                        // Trigger achievement
+                        this.engine.achievementSystem?.onBuildingUpgraded();
+                        
+                        // For demo, complete immediately
+                        setTimeout(() => {
+                            console.log(`✅ ${firstUpgrade.buildingType.name} construction completed!`);
+                        }, 1000);
+                    } else {
+                        console.log(`✗ ${upgradeResult.message}`);
+                    }
+                } else {
+                    console.log('No upgrade cost defined for this building');
+                }
+            } else {
+                console.log('No buildings can be upgraded at this station');
+            }
+        } else {
+            console.log(`✗ ${result.message}`);
+        }
+    }
+    
+    // Handle achievement viewing when A key is pressed
+    handleAchievementView() {
+        if (!this.engine.achievementSystem) {
+            console.log('Achievement system not available');
+            return;
+        }
+        
+        const stats = this.engine.achievementSystem.getStats();
+        
+        console.log('🏆 === ACHIEVEMENTS ===');
+        console.log(`Progress: ${stats.unlockedAchievements}/${stats.totalAchievements} (${stats.completionPercentage.toFixed(1)}%)`);
+        console.log('');
+        
+        // Show achievements by category
+        for (const [categoryId, category] of this.engine.achievementSystem.categories.entries()) {
+            const categoryAchievements = this.engine.achievementSystem.getAchievementsByCategory(categoryId);
+            const unlockedInCategory = categoryAchievements.filter(a => a.unlocked).length;
+            
+            console.log(`${category.icon} ${category.name}: ${unlockedInCategory}/${categoryAchievements.length}`);
+            
+            // Show first few achievements in category
+            for (let i = 0; i < Math.min(3, categoryAchievements.length); i++) {
+                const achievement = categoryAchievements[i];
+                const progress = this.engine.achievementSystem.getAchievementProgress(achievement.id);
+                const status = achievement.unlocked ? '✅' : `${Math.round(progress * 100)}%`;
+                
+                console.log(`  ${status} ${achievement.name}: ${achievement.description}`);
+            }
+            
+            if (categoryAchievements.length > 3) {
+                console.log(`  ... and ${categoryAchievements.length - 3} more`);
+            }
+            console.log('');
+        }
+        
+        // Show recent unlocks
+        if (stats.recentUnlocksCount > 0) {
+            console.log('🎉 Recent Achievements:');
+            for (const unlock of this.engine.achievementSystem.recentUnlocks.slice(-3)) {
+                console.log(`  🏆 ${unlock.achievement.name}`);
+            }
+        }
+        
+        // Show some key statistics
+        console.log('📊 Game Statistics:');
+        console.log(`  Crops Harvested: ${stats.gameStatistics.cropsHarvested || 0}`);
+        console.log(`  Fish Caught: ${stats.gameStatistics.fishCaught || 0}`);
+        console.log(`  Rocks Mined: ${stats.gameStatistics.rocksMinedTotal || 0}`);
+        console.log(`  Foods Cooked: ${stats.gameStatistics.foodsCooked || 0}`);
+        console.log(`  Tools Upgraded: ${stats.gameStatistics.toolsUpgraded || 0}`);
+        console.log(`  Buildings Upgraded: ${stats.gameStatistics.buildingsUpgraded || 0}`);
+        
+        // Trigger a test achievement for demo
+        if (stats.gameStatistics.toolsUpgraded === 0 && stats.gameStatistics.buildingsUpgraded === 0) {
+            console.log('');
+            console.log('💡 Tip: Upgrade a tool (U key) or building (B key) to unlock your first achievements!');
         }
     }
 

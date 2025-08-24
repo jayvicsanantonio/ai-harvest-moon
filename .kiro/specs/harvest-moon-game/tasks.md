@@ -204,35 +204,35 @@
     - Add relationship level thresholds and unlocks
     - _Requirements: 4.6, 4.7_
 
-- [ ] 13. Add basic activities system
-  - [ ] 13.1 Implement fishing mini-game
+- [x] 13. Add basic activities system
+  - [x] 13.1 Implement fishing mini-game
     - Create fishing spots with interaction zones
     - Build simple fishing mini-game with timing mechanics
     - Add fish entities with rarity and value properties
     - _Requirements: 7.1, 7.2_
-  - [ ] 13.2 Add mining system
+  - [x] 13.2 Add mining system
     - Create mine areas with rock entities
     - Implement rock breaking mechanics with tool requirements
     - Add ore and gem generation with random distribution
     - _Requirements: 7.3, 7.6_
-  - [ ] 13.3 Implement basic cooking system
+  - [x] 13.3 Implement basic cooking system
     - Build cooking interface with recipe selection
     - Create recipe system requiring specific ingredients
     - Add cooked food items with stamina restoration bonuses
     - _Requirements: 7.4, 7.5_
 
-- [ ] 14. Create progression and upgrade systems
-  - [ ] 14.1 Implement tool upgrades
+- [x] 14. Create progression and upgrade systems
+  - [x] 14.1 Implement tool upgrades
     - Create upgrade system with material requirements
     - Add upgraded tool stats (efficiency, stamina reduction)
     - Implement upgrade UI and confirmation dialogs
     - _Requirements: 8.3, 8.5_
-  - [ ] 14.2 Add building upgrade system
+  - [x] 14.2 Add building upgrade system
     - Create building upgrade mechanics with cost requirements
     - Implement capacity increases for barns and coops
     - Add visual changes for upgraded buildings
     - _Requirements: 8.1, 8.2_
-  - [ ] 14.3 Build achievement system
+  - [x] 14.3 Build achievement system
     - Create achievement tracking for major milestones
     - Implement achievement unlocks with reward systems
     - Add achievement UI display and progress tracking
