@@ -18,6 +18,9 @@ import { LocalStorageSaveManager } from '../systems/LocalStorageSaveManager.js';
 import { AnimalSystem } from '../systems/AnimalSystem.js';
 import { NPCSystem } from '../systems/NPCSystem.js';
 import { DialogueSystem } from '../systems/DialogueSystem.js';
+import { FishingSystem } from '../systems/FishingSystem.js';
+import { MiningSystem } from '../systems/MiningSystem.js';
+import { CookingSystem } from '../systems/CookingSystem.js';
 
 export class GameEngine {
   constructor(canvas) {
@@ -96,6 +99,15 @@ export class GameEngine {
     // NPC and dialogue systems
     this.npcSystem = null;
     this.dialogueSystem = null;
+    
+    // Fishing system
+    this.fishingSystem = null;
+    
+    // Mining system
+    this.miningSystem = null;
+    
+    // Cooking system
+    this.cookingSystem = null;
   }
 
   async init() {
@@ -175,6 +187,21 @@ export class GameEngine {
     this.npcSystem = new NPCSystem();
     this.npcSystem.init(this);
     this.registerSystem('npc', this.npcSystem);
+    
+    // Initialize fishing system
+    this.fishingSystem = new FishingSystem();
+    this.fishingSystem.init(this);
+    this.registerSystem('fishing', this.fishingSystem);
+    
+    // Initialize mining system
+    this.miningSystem = new MiningSystem();
+    this.miningSystem.init(this);
+    this.registerSystem('mining', this.miningSystem);
+    
+    // Initialize cooking system
+    this.cookingSystem = new CookingSystem();
+    this.cookingSystem.init(this);
+    this.registerSystem('cooking', this.cookingSystem);
 
     console.log("GameEngine initialized");
   }

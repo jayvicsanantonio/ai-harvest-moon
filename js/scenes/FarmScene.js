@@ -280,7 +280,7 @@ export class FarmScene extends Scene {
         this.giveStarterAnimalItems();
     }
     
-    // Give player basic animal care items
+    // Give player basic animal care items and tools
     giveStarterAnimalItems() {
         if (!this.player || !this.player.inventory) return;
         
@@ -290,7 +290,18 @@ export class FarmScene extends Scene {
         this.player.inventory.addItem('seeds', 8);
         this.player.inventory.addItem('grain', 6);
         
-        console.log('Added starter animal care items to player inventory');
+        // Add basic fishing rod and pickaxe
+        this.player.inventory.addItem('fishing_rod', 1);
+        this.player.inventory.addItem('pickaxe', 1);
+        
+        // Add basic cooking ingredients
+        this.player.inventory.addItem('potato', 5);
+        this.player.inventory.addItem('herbs', 3);
+        this.player.inventory.addItem('flour', 2);
+        this.player.inventory.addItem('milk', 1);
+        this.player.inventory.addItem('egg', 2);
+        
+        console.log('Added starter items (tools, food, and cooking ingredients) to player inventory');
     }
     
     setupCollisions() {
@@ -370,6 +381,29 @@ export class FarmScene extends Scene {
             this.handleNPCInteraction();
         }
         
+        // Handle fishing interactions (F key to start fishing, SPACE to catch)
+        if (inputManager.isKeyPressed('KeyF')) {
+            this.handleFishingInteraction();
+        }
+        
+        if (inputManager.isKeyPressed('Space')) {
+            this.handleFishingCatch();
+        }
+        
+        // Handle mining interactions (M key to mine)
+        if (inputManager.isKeyPressed('KeyM')) {
+            this.handleMiningInteraction();
+        }
+        
+        // Handle cooking interactions (Q key to open cooking menu, SPACE to finish)
+        if (inputManager.isKeyPressed('KeyQ')) {
+            this.handleCookingInteraction();
+        }
+        
+        if (inputManager.isKeyPressed('Space') && this.engine.cookingSystem?.isCooking) {
+            this.handleCookingFinish();
+        }
+        
         // Farm-specific update logic can go here
         // Base Scene class already handles entity updates
     }
@@ -394,6 +428,18 @@ export class FarmScene extends Scene {
             this.engine.weatherSystem.renderWeatherEffects(renderSystem);
         }
         
+        // Render fishing system
+        if (this.engine.fishingSystem) {
+            this.engine.fishingSystem.render(renderSystem);
+        }
+        
+        // No explicit mining system render needed - rocks are entities
+        
+        // Render cooking system
+        if (this.engine.cookingSystem) {
+            this.engine.cookingSystem.render(renderSystem);
+        }
+        
         // Render debug information if debug mode is enabled
         if (this.engine.isDebugMode()) {
             this.engine.collisionSystem.renderDebug(renderSystem);
@@ -402,6 +448,7 @@ export class FarmScene extends Scene {
             this.engine.animalSystem?.renderDebug(renderSystem);
             this.engine.npcSystem?.renderDebug(renderSystem);
             this.engine.dialogueSystem?.renderDebug(renderSystem);
+            this.engine.miningSystem?.renderDebug(renderSystem);
             renderSystem.renderCullingDebug();
             this.renderPerformanceStats(renderSystem);
         }
@@ -652,6 +699,149 @@ export class FarmScene extends Scene {
         // Display result
         if (result.success) {
             console.log(`✓ ${result.message}`);
+        } else {
+            console.log(`✗ ${result.message}`);
+        }
+    }
+    
+    // Handle fishing interaction when F key is pressed
+    handleFishingInteraction() {
+        if (!this.player || !this.engine.fishingSystem) {
+            console.log('Fishing system not available');
+            return;
+        }
+        
+        // If already fishing, stop fishing
+        if (this.engine.fishingSystem.isFishing) {
+            const result = this.engine.fishingSystem.handlePlayerInteraction(
+                this.player, 'stop_fishing'
+            );
+            console.log(result.message);
+            return;
+        }
+        
+        // Try to start fishing
+        const result = this.engine.fishingSystem.handlePlayerInteraction(
+            this.player, 'start_fishing'
+        );
+        
+        if (result.success) {
+            console.log(`🎣 ${result.message}`);
+        } else {
+            console.log(`✗ ${result.message}`);
+        }
+    }
+    
+    // Handle fishing catch attempt when SPACE is pressed
+    handleFishingCatch() {
+        if (!this.player || !this.engine.fishingSystem) {
+            return;
+        }
+        
+        // Only process catch attempts during fishing
+        if (!this.engine.fishingSystem.isFishing) {
+            return;
+        }
+        
+        const result = this.engine.fishingSystem.handlePlayerInteraction(
+            this.player, 'catch_fish'
+        );
+        
+        if (result.success) {
+            console.log(`🐟 ${result.message} (Quality: ${result.quality})`);
+            
+            // Add to inventory is handled by fishing system
+            // Could add UI effects here for successful catch
+            
+        } else {
+            console.log(`✗ ${result.message}`);
+        }
+    }
+    
+    // Handle mining interaction when M key is pressed
+    handleMiningInteraction() {
+        if (!this.player || !this.engine.miningSystem) {
+            console.log('Mining system not available');
+            return;
+        }
+        
+        const result = this.engine.miningSystem.handlePlayerInteraction(
+            this.player, 'mine'
+        );
+        
+        if (result.success) {
+            if (result.broken) {
+                console.log(`⛏️ ${result.message}`);
+                if (result.drops && result.drops.length > 0) {
+                    const dropText = result.drops.map(drop => `${drop.amount}x ${drop.type}`).join(', ');
+                    console.log(`🎒 Collected: ${dropText}`);
+                }
+            } else {
+                console.log(`⛏️ ${result.message}`);
+            }
+        } else {
+            console.log(`✗ ${result.message}`);
+        }
+    }
+    
+    // Handle cooking interaction when Q key is pressed
+    handleCookingInteraction() {
+        if (!this.player || !this.engine.cookingSystem) {
+            console.log('Cooking system not available');
+            return;
+        }
+        
+        const result = this.engine.cookingSystem.handlePlayerInteraction(
+            this.player, 'open_cooking_menu'
+        );
+        
+        if (result.success) {
+            console.log(`🍳 ${result.message}`);
+            
+            // For now, auto-start cooking the first available recipe
+            // In a full implementation, this would open a recipe selection UI
+            if (result.availableRecipes.length > 0) {
+                const firstRecipe = result.availableRecipes[0];
+                const startResult = this.engine.cookingSystem.handlePlayerInteraction(
+                    this.player, 'start_cooking', {
+                        recipeId: firstRecipe.recipeId,
+                        stationId: result.station.id
+                    }
+                );
+                
+                if (startResult.success) {
+                    console.log(`🍳 ${startResult.message} - cooking for ${startResult.cookingTime}ms`);
+                } else {
+                    console.log(`✗ ${startResult.message}`);
+                }
+            } else {
+                console.log('No recipes available at this station');
+            }
+        } else {
+            console.log(`✗ ${result.message}`);
+        }
+    }
+    
+    // Handle cooking finish when SPACE is pressed during cooking
+    handleCookingFinish() {
+        if (!this.player || !this.engine.cookingSystem) {
+            return;
+        }
+        
+        const result = this.engine.cookingSystem.handlePlayerInteraction(
+            this.player, 'finish_cooking'
+        );
+        
+        if (result.success) {
+            let message = `🍳 ${result.message}`;
+            if (result.perfectTiming) {
+                message += ' (Perfect timing!)';
+            } else if (result.overcooked) {
+                message += ' (Overcooked...)';
+            }
+            
+            console.log(message);
+            console.log(`🎒 Added ${result.result.name} to inventory (+${result.experience} exp)`);
         } else {
             console.log(`✗ ${result.message}`);
         }

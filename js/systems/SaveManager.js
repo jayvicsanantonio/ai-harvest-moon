@@ -148,6 +148,21 @@ export class SaveManager {
             saveData.npcs = this.serializeNPCSystem();
         }
         
+        // Fishing system data
+        if (this.gameEngine.fishingSystem) {
+            saveData.fishing = this.serializeFishingSystem();
+        }
+        
+        // Mining system data
+        if (this.gameEngine.miningSystem) {
+            saveData.mining = this.serializeMiningSystem();
+        }
+        
+        // Cooking system data
+        if (this.gameEngine.cookingSystem) {
+            saveData.cooking = this.serializeCookingSystem();
+        }
+        
         // World state
         saveData.world = {
             currentScene: this.gameEngine.sceneManager?.getCurrentScene()?.name || 'Farm',
@@ -284,6 +299,24 @@ export class SaveManager {
         return serializedData;
     }
     
+    // Serialize fishing system data
+    serializeFishingSystem() {
+        const fishingSystem = this.gameEngine.fishingSystem;
+        return fishingSystem.serialize();
+    }
+    
+    // Serialize mining system data
+    serializeMiningSystem() {
+        const miningSystem = this.gameEngine.miningSystem;
+        return miningSystem.serialize();
+    }
+    
+    // Serialize cooking system data
+    serializeCookingSystem() {
+        const cookingSystem = this.gameEngine.cookingSystem;
+        return cookingSystem.serialize();
+    }
+    
     // Load game state from save data
     loadGameState(saveData) {
         if (!this.validateSaveData(saveData)) {
@@ -320,6 +353,21 @@ export class SaveManager {
         // Load NPC system
         if (saveData.npcs && this.gameEngine.npcSystem) {
             this.loadNPCSystem(saveData.npcs);
+        }
+        
+        // Load fishing system
+        if (saveData.fishing && this.gameEngine.fishingSystem) {
+            this.loadFishingSystem(saveData.fishing);
+        }
+        
+        // Load mining system
+        if (saveData.mining && this.gameEngine.miningSystem) {
+            this.loadMiningSystem(saveData.mining);
+        }
+        
+        // Load cooking system
+        if (saveData.cooking && this.gameEngine.cookingSystem) {
+            this.loadCookingSystem(saveData.cooking);
         }
         
         // Load world state
@@ -549,6 +597,24 @@ export class SaveManager {
                 console.error('Failed to load NPC class:', error);
             });
         }
+    }
+    
+    loadFishingSystem(fishingData) {
+        const fishingSystem = this.gameEngine.fishingSystem;
+        fishingSystem.deserialize(fishingData, this.gameEngine);
+        console.log('Restored fishing system with skill level:', fishingSystem.fishingSkill);
+    }
+    
+    loadMiningSystem(miningData) {
+        const miningSystem = this.gameEngine.miningSystem;
+        miningSystem.deserialize(miningData, this.gameEngine);
+        console.log('Restored mining system with skill level:', miningSystem.miningSkill);
+    }
+    
+    loadCookingSystem(cookingData) {
+        const cookingSystem = this.gameEngine.cookingSystem;
+        cookingSystem.deserialize(cookingData, this.gameEngine);
+        console.log('Restored cooking system with level:', cookingSystem.cookingLevel);
     }
     
     loadWorldState(worldData) {
