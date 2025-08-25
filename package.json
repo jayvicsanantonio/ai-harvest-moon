@@ -1,0 +1,37 @@
+{
+  "name": "harvest-moon-web-game",
+  "version": "1.0.0",
+  "description": "A web-based Harvest Moon farming simulation game",
+  "main": "index.html",
+  "scripts": {
+    "start": "python3 -m http.server 8000",
+    "dev": "lsof -ti:8000 | xargs kill -9 2>/dev/null || true && python3 -m http.server 8000 & sleep 2 && open http://localhost:8000",
+    "serve": "python3 -m http.server 8000",
+    "test": "node tests/runAllTests.js",
+    "test-browser": "node test-game.js",
+    "clean": "rm -f *.png test-game.js",
+    "setup": "node generate-placeholders.js && echo 'Harvest Moon Game Setup Complete! Run npm start to begin development.'",
+    "placeholders": "node generate-placeholders.js"
+  },
+  "keywords": [
+    "game",
+    "farming",
+    "simulation",
+    "javascript",
+    "canvas",
+    "web-game"
+  ],
+  "author": "Claude Code Assistant",
+  "license": "MIT",
+  "dependencies": {
+    "playwright": "^1.55.0"
+  },
+  "engines": {
+    "node": ">=14.0.0",
+    "python": ">=3.6.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "."
+  }
+}

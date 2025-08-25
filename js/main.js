@@ -31,7 +31,26 @@ class Game {
 
             // Load assets
             console.log('Loading game assets...');
-            await this.assetLoader.loadAll();
+            
+            // Set up a timeout to ensure loading doesn't hang forever
+            const loadingTimeout = setTimeout(() => {
+                console.warn('Asset loading timeout reached, proceeding anyway');
+                window.dispatchEvent(new CustomEvent('assetsLoaded', {
+                    detail: { loaded: 0, failed: 0, timeout: true }
+                }));
+            }, 10000); // 10 second timeout
+            
+            try {
+                await this.assetLoader.loadAll();
+                clearTimeout(loadingTimeout);
+            } catch (error) {
+                console.error('Asset loading failed:', error);
+                clearTimeout(loadingTimeout);
+                // Dispatch the event manually to proceed
+                window.dispatchEvent(new CustomEvent('assetsLoaded', {
+                    detail: { loaded: 0, failed: 0, error: true }
+                }));
+            }
             
             // Setup scenes after assets are loaded
             this.setupScenes();
@@ -46,16 +65,41 @@ class Game {
     
     setupScenes() {
         // Register all game scenes with the SceneManager
-        this.engine.sceneManager.registerScene('Farm', FarmScene);
-        this.engine.sceneManager.registerScene('Village', VillageScene);
-        this.engine.sceneManager.registerScene('House', () => new InteriorScene('house'));
-        this.engine.sceneManager.registerScene('Shop', () => new InteriorScene('shop'));
-        this.engine.sceneManager.registerScene('Barn', () => new InteriorScene('barn'));
-        
-        // Start with Farm scene
-        this.engine.sceneManager.transitionToScene('Farm');
-        
-        console.log('Scenes initialized and Farm scene loaded');
+        // For class constructors, we need to create wrapper classes
+        try {
+            this.engine.sceneManager.registerScene('Farm', FarmScene);
+            this.engine.sceneManager.registerScene('Village', VillageScene);
+            
+            // For InteriorScene variants, create specific scene classes
+            class HouseScene extends InteriorScene {
+                constructor(name) { super('house'); }
+            }
+            class ShopScene extends InteriorScene {
+                constructor(name) { super('shop'); }
+            }
+            class BarnScene extends InteriorScene {
+                constructor(name) { super('barn'); }
+            }
+            
+            this.engine.sceneManager.registerScene('House', HouseScene);
+            this.engine.sceneManager.registerScene('Shop', ShopScene);
+            this.engine.sceneManager.registerScene('Barn', BarnScene);
+            
+            // Start with Farm scene
+            this.engine.sceneManager.transitionToScene('Farm');
+            
+            console.log('Scenes initialized and Farm scene loaded');
+        } catch (error) {
+            console.error('Failed to setup scenes:', error);
+            // Try to at least register the Farm scene
+            try {
+                this.engine.sceneManager.registerScene('Farm', FarmScene);
+                this.engine.sceneManager.transitionToScene('Farm');
+                console.log('Fallback: Farm scene loaded only');
+            } catch (fallbackError) {
+                console.error('Critical: Failed to load even Farm scene:', fallbackError);
+            }
+        }
     }
 
     start() {
@@ -98,11 +142,42 @@ document.addEventListener('DOMContentLoaded', async () => {
     
     // Listen for assets loaded event to show game container
     window.addEventListener('assetsLoaded', (event) => {
+        console.log('assetsLoaded event received, transitioning to game');
+        
+        const loadingScreen = document.getElementById('loading-screen');
         const gameContainer = document.getElementById('game-container');
-        if (gameContainer) {
-            gameContainer.style.display = 'flex';
+        
+        const { loaded, failed, timeout, error } = event.detail;
+        if (timeout) {
+            console.warn('Assets loaded with timeout - some assets may be missing');
+        } else if (error) {
+            console.warn('Assets loaded with errors - some assets may be missing');
+        } else {
+            console.log(`Assets loaded successfully: ${loaded} loaded, ${failed} failed`);
         }
-        console.log('Assets loaded, showing game container');
+        
+        // Add a small delay to ensure DOM is ready, then transition
+        setTimeout(() => {
+            if (loadingScreen) {
+                // Force hide loading screen completely
+                loadingScreen.style.display = 'none';
+                loadingScreen.style.visibility = 'hidden';
+                loadingScreen.style.opacity = '0';
+                loadingScreen.style.zIndex = '-1';
+                console.log('Loading screen hidden');
+            }
+            
+            if (gameContainer) {
+                // Force show game container 
+                gameContainer.style.display = 'flex';
+                gameContainer.style.visibility = 'visible';
+                gameContainer.style.opacity = '1';
+                gameContainer.style.zIndex = '1';
+                console.log('Game container shown');
+            }
+            
+            console.log('Game container now visible, starting game');
+        }, 100); // Small delay to ensure smooth transition
     });
     
     // Add debug mode toggle (press F1 to toggle debug info)
@@ -118,6 +193,90 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Show loading screen (it's visible by default in HTML)
     console.log('Starting game initialization...');
     
-    await game.init();
-    game.start();
+    // Emergency fallback - force start the game after 15 seconds no matter what
+    const emergencyTimeout = setTimeout(() => {
+        console.warn('Emergency timeout reached - forcing game to start');
+        
+        const loadingScreen = document.getElementById('loading-screen');
+        const gameContainer = document.getElementById('game-container');
+        
+        if (loadingScreen) {
+            // Force hide loading screen completely
+            loadingScreen.style.display = 'none';
+            loadingScreen.style.visibility = 'hidden';
+            loadingScreen.style.opacity = '0';
+            loadingScreen.style.zIndex = '-1';
+        }
+        
+        if (gameContainer) {
+            // Force show game container 
+            gameContainer.style.display = 'flex';
+            gameContainer.style.visibility = 'visible';
+            gameContainer.style.opacity = '1';
+            gameContainer.style.zIndex = '1';
+        }
+        
+        // If we have a game instance, try to start it
+        if (window.harvestMoonGame && window.harvestMoonGame.engine) {
+            window.harvestMoonGame.start();
+        }
+    }, 15000); // 15 second emergency timeout
+    
+    // Additional failsafe - if loading screen is still visible after 5 seconds, force hide it
+    const loadingFailsafe = setTimeout(() => {
+        const loadingScreen = document.getElementById('loading-screen');
+        const gameContainer = document.getElementById('game-container');
+        
+        if (loadingScreen && loadingScreen.style.display !== 'none') {
+            console.warn('Loading screen still visible after 5 seconds - forcing transition');
+            
+            // Force hide loading screen
+            loadingScreen.style.display = 'none';
+            loadingScreen.style.visibility = 'hidden';
+            loadingScreen.style.opacity = '0';
+            loadingScreen.style.zIndex = '-1';
+            
+            // Force show game container 
+            if (gameContainer) {
+                gameContainer.style.display = 'flex';
+                gameContainer.style.visibility = 'visible';
+                gameContainer.style.opacity = '1';
+                gameContainer.style.zIndex = '1';
+            }
+        }
+    }, 5000); // 5 second failsafe
+    
+    // Store game instance globally for emergency timeout
+    window.harvestMoonGame = game;
+    
+    try {
+        await game.init();
+        game.start();
+        clearTimeout(emergencyTimeout); // Cancel emergency timeout on success
+        clearTimeout(loadingFailsafe); // Cancel failsafe timeout on success
+    } catch (error) {
+        clearTimeout(emergencyTimeout);
+        clearTimeout(loadingFailsafe);
+        console.error('Critical game initialization error:', error);
+        
+        // Force show the game container even if init fails
+        const loadingScreen = document.getElementById('loading-screen');
+        const gameContainer = document.getElementById('game-container');
+        
+        if (loadingScreen) {
+            loadingScreen.style.display = 'none';
+        }
+        
+        if (gameContainer) {
+            gameContainer.style.display = 'flex';
+        }
+        
+        // Show error message
+        game.showError('Game failed to initialize properly. Some features may not work.');
+        
+        // Try to start anyway
+        if (game.engine) {
+            game.start();
+        }
+    }
 });

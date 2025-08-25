@@ -117,6 +117,7 @@ export class AssetLoader {
     
     // Set up asset loading callbacks
     setupCallbacks() {
+        console.log('Setting up asset loading callbacks');
         this.assetManager.setCallbacks({
             onProgress: (progress, loaded, total) => {
                 this.onLoadProgress(progress, loaded, total);
@@ -148,16 +149,13 @@ export class AssetLoader {
     onLoadComplete(loaded, failed) {
         console.log(`Asset loading complete: ${loaded} loaded, ${failed} failed`);
         
-        // Hide loading screen
-        const loadingScreen = document.getElementById('loading-screen');
-        if (loadingScreen) {
-            loadingScreen.style.display = 'none';
-        }
-        
         // Emit event for game to continue
+        console.log('Dispatching assetsLoaded event');
         window.dispatchEvent(new CustomEvent('assetsLoaded', {
             detail: { loaded, failed }
         }));
+        
+        console.log('assetsLoaded event dispatched successfully');
     }
     
     onLoadError(assetId, error) {
@@ -167,8 +165,11 @@ export class AssetLoader {
     
     // Load all queued assets
     async loadAll() {
+        console.log('AssetLoader.loadAll() called');
         this.setupCallbacks();
+        console.log('About to call assetManager.loadAll()');
         await this.assetManager.loadAll();
+        console.log('assetManager.loadAll() completed');
     }
     
     // Preload only critical assets
