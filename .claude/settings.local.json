@@ -3,9 +3,31 @@
     "allow": [
       "Bash(mkdir:*)",
       "Bash(git checkout:*)",
-      "Bash(node:*)"
+      "Bash(node:*)",
+      "Bash(npx playwright test:*)",
+      "Bash(npm run dev:*)",
+      "mcp__playwright__browser_navigate",
+      "mcp__playwright__browser_wait_for",
+      "mcp__playwright__browser_take_screenshot",
+      "mcp__playwright__browser_network_requests",
+      "mcp__playwright__browser_evaluate",
+      "Bash(npm start)",
+      "mcp__playwright__browser_console_messages",
+      "mcp__playwright__browser_close",
+      "Bash(for animal in cow chicken sheep)",
+      "Bash(do for direction in down up left right)",
+      "Bash(do cp ../player/idle_down.png $animal_$direction.png)",
+      "Bash(done)",
+      "Bash(for direction in down up left right)",
+      "Bash(do cp npc_default.png farmer_woman_$direction.png)",
+      "Bash(python3:*)",
+      "Bash(do cp npc_merchant.png merchant_$direction.png)",
+      "mcp__playwright__browser_snapshot",
+      "Bash(pkill:*)",
+      "Bash(git shortlog:*)",
+      "Bash(npm test)"
     ],
     "defaultMode": "acceptEdits"
   },
-  "outputStyle": "Learning"
+  "outputStyle": "default"
 }

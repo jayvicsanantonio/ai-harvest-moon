@@ -625,6 +625,12 @@ export class Player {
     }
     
     render(renderSystem) {
+        if (!renderSystem) {
+            console.warn('Player: RenderSystem is null, skipping render');
+            return;
+        }
+        console.log(`DEBUG Player: Rendering with sprite '${this.currentSprite}' at (${this.x}, ${this.y})`);
+        
         // Draw the player sprite with current animation frame
         renderSystem.drawSprite(
             this.currentSprite,
@@ -660,7 +666,9 @@ export class Player {
         }
         
         // Render inventory UI if open
-        this.inventoryUI.render(renderSystem);
+        if (this.inventoryUI && renderSystem) {
+            this.inventoryUI.render(renderSystem);
+        }
     }
     
     consumeStamina(amount) {

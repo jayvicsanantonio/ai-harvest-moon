@@ -304,6 +304,10 @@ export class WeatherSystem {
         if (!this.gameEngine?.renderSystem?.camera) return;
         
         const camera = this.gameEngine.renderSystem.camera;
+        if (!this.gameEngine.canvas) {
+            console.warn('WeatherSystem: Canvas is null, skipping rain update');
+            return;
+        }
         const screenWidth = this.gameEngine.canvas.width;
         const screenHeight = this.gameEngine.canvas.height;
         
@@ -337,6 +341,10 @@ export class WeatherSystem {
         if (!this.gameEngine?.renderSystem?.camera) return;
         
         const camera = this.gameEngine.renderSystem.camera;
+        if (!this.gameEngine.canvas) {
+            console.warn('WeatherSystem: Canvas is null, skipping rain particle reset');
+            return;
+        }
         const screenWidth = this.gameEngine.canvas.width;
         
         particle.x = camera.x + (Math.random() * (screenWidth + 100)) - 50;

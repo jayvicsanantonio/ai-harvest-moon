@@ -18,7 +18,8 @@ export class HUD {
             timePanel: { x: 0, y: 0, width: 200, height: 80 },
             staminaPanel: { x: 0, y: 0, width: 150, height: 30 },
             toolPanel: { x: 0, y: 0, width: 200, height: 50 },
-            statusPanel: { x: 0, y: 0, width: 180, height: 40 }
+            statusPanel: { x: 0, y: 0, width: 180, height: 40 },
+            controlsPanel: { x: 0, y: 0, width: 300, height: 120 }
         };
         
         // Animation states
@@ -37,6 +38,10 @@ export class HUD {
         if (!this.gameEngine?.renderSystem) return;
         
         const canvas = this.gameEngine.renderSystem.canvas;
+        if (!canvas) {
+            console.warn('HUD: Canvas is null, skipping layout update');
+            return;
+        }
         const canvasWidth = canvas.width;
         const canvasHeight = canvas.height;
         
@@ -56,6 +61,13 @@ export class HUD {
         // Status panel - bottom right
         this.sections.statusPanel.x = canvasWidth - this.sections.statusPanel.width - this.padding;
         this.sections.statusPanel.y = canvasHeight - this.sections.statusPanel.height - this.padding;
+        
+        // Controls panel - positioned outside canvas on the right (for external display)
+        // Since this renders in screen-space, position it within canvas bounds for now
+        this.sections.controlsPanel.x = canvasWidth - this.sections.controlsPanel.width - this.padding;
+        this.sections.controlsPanel.y = this.padding + 100; // Position below stamina panel
+        
+        console.log('HUD: Controls panel positioned at:', this.sections.controlsPanel.x, this.sections.controlsPanel.y, 'Canvas size:', canvasWidth, canvasHeight);
     }
     
     // Update HUD animations and state
@@ -118,6 +130,7 @@ export class HUD {
         this.renderStaminaPanel(renderSystem);
         this.renderToolPanel(renderSystem);
         this.renderStatusPanel(renderSystem);
+        this.renderControlsPanel(renderSystem);
         
         // Render debug info if enabled
         if (this.gameEngine.isDebugMode()) {
@@ -383,6 +396,10 @@ export class HUD {
         if (!this.gameEngine.renderSystem) return;
         
         const canvas = this.gameEngine.renderSystem.canvas;
+        if (!canvas) {
+            console.warn('HUD: Canvas is null, skipping debug panel render');
+            return;
+        }
         const debugX = canvas.width - 300;
         const debugY = 100;
         
@@ -538,5 +555,58 @@ export class HUD {
         }
         
         console.groupEnd();
+    }
+    
+    renderControlsPanel(renderSystem) {
+        const section = this.sections.controlsPanel;
+        
+        // Background
+        renderSystem.drawRect(
+            section.x, section.y, section.width, section.height,
+            'rgba(0, 0, 0, 0.8)', { layer: 200 }
+        );
+        
+        // Border
+        renderSystem.drawRect(
+            section.x - 1, section.y - 1, section.width + 2, section.height + 2,
+            '#555555', { alpha: 0.8, layer: 199 }
+        );
+        
+        // Title
+        renderSystem.drawText(
+            'CONTROLS',
+            section.x + section.width / 2, section.y + this.padding,
+            { 
+                color: '#ffdd44', 
+                fontSize: this.fontSize, 
+                layer: 201,
+                align: 'center',
+                font: `bold ${this.fontSize}px Arial`
+            }
+        );
+        
+        // Control instructions
+        const controls = [
+            'WASD / Arrow Keys - Move',
+            'Z - Interact/Use Tool', 
+            'X - Open/Close Inventory',
+            'Space - Run/Sprint',
+            'Tab - Switch Tools'
+        ];
+        
+        let yOffset = 30;
+        for (const control of controls) {
+            renderSystem.drawText(
+                control,
+                section.x + this.padding, section.y + yOffset,
+                { 
+                    color: this.textColor, 
+                    fontSize: this.smallFontSize, 
+                    layer: 201,
+                    font: `${this.smallFontSize}px Arial`
+                }
+            );
+            yOffset += 18;
+        }
     }
 }

@@ -458,6 +458,10 @@ export class AchievementSystem {
     // Render achievement unlock popup
     renderAchievementPopup(renderSystem, achievement) {
         const canvas = renderSystem.canvas;
+        if (!canvas) {
+            console.warn('AchievementSystem: Canvas is null, skipping achievement popup render');
+            return;
+        }
         const centerX = canvas.width / 2;
         const popupY = 100;
         

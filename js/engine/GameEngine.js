@@ -128,6 +128,12 @@ export class GameEngine {
       throw new Error("Unable to get 2D rendering context");
     }
 
+    // Set canvas to fullscreen dimensions
+    this.resizeCanvas();
+    
+    // Add resize listener for fullscreen responsiveness
+    window.addEventListener('resize', () => this.resizeCanvas());
+
     // Initialize asset manager first
     this.assetManager = new AssetManager();
     this.registerSystem('assets', this.assetManager);
@@ -174,6 +180,7 @@ export class GameEngine {
     
     // Initialize weather system
     this.weatherSystem = new WeatherSystem();
+    this.weatherSystem.init(this);
     this.registerSystem('weather', this.weatherSystem);
     
     // Initialize scene manager
@@ -234,11 +241,41 @@ export class GameEngine {
   }
 
   start() {
-    if (this.isRunning) return;
+    console.log('DEBUG GameEngine: >>>>>> ENTERED start() method <<<<<<');
+    console.log('DEBUG GameEngine: this context:', this);
+    console.log('DEBUG GameEngine: this.constructor.name:', this.constructor.name);
+    
+    try {
+      console.log('DEBUG GameEngine: Inside try block - start() method called');
+      
+      console.log('DEBUG GameEngine: Checking isRunning value:', this.isRunning);
+      if (this.isRunning) {
+        console.log('DEBUG GameEngine: Already running, returning early');
+        return;
+      }
 
-    this.isRunning = true;
-    this.lastTime = performance.now();
-    this.gameLoop();
+      console.log('DEBUG GameEngine: Setting isRunning = true and starting game loop');
+      this.isRunning = true;
+      this.lastTime = performance.now();
+      console.log('DEBUG GameEngine: isRunning set to:', this.isRunning);
+      console.log('DEBUG GameEngine: lastTime set to:', this.lastTime);
+      
+      // Start the game loop with requestAnimationFrame
+      console.log('DEBUG GameEngine: About to call requestAnimationFrame with gameLoop');
+      console.log('DEBUG GameEngine: this.gameLoop exists:', !!this.gameLoop);
+      console.log('DEBUG GameEngine: this.gameLoop type:', typeof this.gameLoop);
+      
+      const rafId = requestAnimationFrame(this.gameLoop);
+      console.log('DEBUG GameEngine: requestAnimationFrame called, returned ID:', rafId);
+      
+      console.log('DEBUG GameEngine: start() method completed successfully');
+    } catch (error) {
+      console.error('DEBUG GameEngine: Error in start() method:', error);
+      console.error('DEBUG GameEngine: Error stack:', error.stack);
+      throw error;
+    }
+    
+    console.log('DEBUG GameEngine: >>>>>> EXITING start() method <<<<<<');
   }
 
   stop() {
@@ -246,7 +283,16 @@ export class GameEngine {
   }
 
   gameLoop = (currentTime) => {
-    if (!this.isRunning) return;
+    if (!this.isRunning) {
+      console.log('DEBUG: gameLoop called but isRunning is false');
+      return;
+    }
+
+    // Add a simple counter to verify the loop is running
+    this.frameCount = (this.frameCount || 0) + 1;
+    if (this.frameCount % 60 === 0) { // Log every 60 frames (~1 second)
+      console.log(`DEBUG: Game loop running - frame ${this.frameCount}`);
+    }
 
     const frameStart = performance.now();
 
@@ -290,9 +336,9 @@ export class GameEngine {
         this.dialogueSystem.handleInput(this.inputManager);
       }
 
-      // Update all registered systems (except input which we already updated)
+      // Update all registered systems (except input and scene which we already updated)
       for (const [systemName, system] of this.systems.entries()) {
-        if (systemName !== 'input' && system.update) {
+        if (systemName !== 'input' && systemName !== 'scene' && system.update) {
           try {
             system.update(deltaTime);
           } catch (error) {
@@ -309,25 +355,43 @@ export class GameEngine {
 
   render() {
     try {
+      console.log('DEBUG GameEngine: Starting render frame');
+      
       // Clear and begin render frame
       this.renderSystem.clear();
+      console.log('DEBUG GameEngine: Canvas cleared');
 
       // Render current scene through scene manager
       if (this.sceneManager) {
+        console.log('DEBUG GameEngine: Calling sceneManager.render()');
         this.sceneManager.render(this.renderSystem);
+      } else {
+        console.log('DEBUG GameEngine: No sceneManager found');
       }
 
       // Flush all queued render commands
+      console.log('DEBUG GameEngine: About to flush render commands');
+      console.log('DEBUG GameEngine: RenderSystem state:', {
+        queue: this.renderSystem.renderQueue?.length || 0,
+        batches: this.renderSystem.spriteBatches?.size || 0
+      });
       this.renderSystem.flush();
+      console.log('DEBUG GameEngine: Render commands flushed successfully');
       
       // Render dialogue system on top of everything
+      console.log('DEBUG GameEngine: Checking dialogue system');
       if (this.dialogueSystem) {
+        console.log('DEBUG GameEngine: Rendering dialogue system');
         this.dialogueSystem.render(this.renderSystem);
+        console.log('DEBUG GameEngine: Dialogue system rendered');
       }
       
       // Render achievement system (popups and notifications)
+      console.log('DEBUG GameEngine: Checking achievement system');
       if (this.achievementSystem) {
+        console.log('DEBUG GameEngine: Rendering achievement system');
         this.achievementSystem.render(this.renderSystem);
+        console.log('DEBUG GameEngine: Achievement system rendered');
       }
 
       // Render debug information in development
@@ -336,6 +400,12 @@ export class GameEngine {
       }
     } catch (error) {
       console.error("Error during rendering:", error);
+      console.error("Error stack trace:", error.stack);
+      console.error("RenderSystem state:", {
+        hasRenderSystem: !!this.renderSystem,
+        hasCanvas: !!(this.renderSystem && this.renderSystem.canvas),
+        canvasType: this.renderSystem?.canvas ? typeof this.renderSystem.canvas : 'undefined'
+      });
       this.renderErrorState();
     }
   }
@@ -453,5 +523,31 @@ export class GameEngine {
 
   getSystem(name) {
     return this.systems.get(name);
+  }
+  
+  resizeCanvas() {
+    const devicePixelRatio = window.devicePixelRatio || 1;
+    const width = window.innerWidth;
+    const height = window.innerHeight;
+    
+    // Set the actual dimensions
+    this.canvas.width = width * devicePixelRatio;
+    this.canvas.height = height * devicePixelRatio;
+    
+    // Scale back down using CSS
+    this.canvas.style.width = width + 'px';
+    this.canvas.style.height = height + 'px';
+    
+    // Scale the context to ensure correct drawing operations
+    if (this.ctx) {
+      this.ctx.scale(devicePixelRatio, devicePixelRatio);
+    }
+    
+    // Notify render system of size change
+    if (this.renderSystem) {
+      this.renderSystem.resize(width, height);
+    }
+    
+    console.log(`Canvas resized to ${width}x${height} (${this.canvas.width}x${this.canvas.height} internal)`);
   }
 }

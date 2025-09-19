@@ -70,20 +70,20 @@ body {
 }
 
 #game-container {
-    display: flex;
-    justify-content: center;
-    align-items: center;
     width: 100vw;
     height: 100vh;
     position: relative;
+    overflow: hidden;
 }
 
 #game-canvas {
-    border: 2px solid #34495e;
+    width: 100vw;
+    height: 100vh;
     background: #3498db;
     image-rendering: pixelated;
     image-rendering: -moz-crisp-edges;
     image-rendering: crisp-edges;
+    display: block;
 }
 
 #ui-overlay {

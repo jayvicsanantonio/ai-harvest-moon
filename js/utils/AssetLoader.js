@@ -9,6 +9,8 @@ export class AssetLoader {
     // Queue all game assets for loading
     queueGameAssets() {
         this.queuePlayerAssets();
+        this.queueAnimalAssets();
+        this.queueNPCAssets();
         this.queueEnvironmentAssets();
         this.queueUIAssets();
         this.queueAudioAssets();
@@ -19,7 +21,7 @@ export class AssetLoader {
         // Player sprites (using placeholder colored rectangles for now)
         // In a real game, these would be actual sprite files
         
-        // These will use fallback colored rectangles since files don't exist yet
+        // Player sprites - AssetManager automatically adds basePath './assets/'
         this.assetManager.queueSprite('player_idle_down', 'sprites/player/idle_down.png', { priority: 'high' });
         this.assetManager.queueSprite('player_idle_up', 'sprites/player/idle_up.png', { priority: 'high' });
         this.assetManager.queueSprite('player_idle_left', 'sprites/player/idle_left.png', { priority: 'high' });
@@ -42,6 +44,40 @@ export class AssetLoader {
         this.assetManager.queueSprite('player_walk_right_3', 'sprites/player/walk_right_3.png', { priority: 'high' });
     }
     
+    queueAnimalAssets() {
+        // Cow sprites - all directions
+        this.assetManager.queueSprite('cow_idle_down', 'sprites/animals/cow_down.png');
+        this.assetManager.queueSprite('cow_idle_up', 'sprites/animals/cow_up.png');
+        this.assetManager.queueSprite('cow_idle_left', 'sprites/animals/cow_left.png');
+        this.assetManager.queueSprite('cow_idle_right', 'sprites/animals/cow_right.png');
+        
+        // Chicken sprites - all directions
+        this.assetManager.queueSprite('chicken_idle_down', 'sprites/animals/chicken_down.png');
+        this.assetManager.queueSprite('chicken_idle_up', 'sprites/animals/chicken_up.png');
+        this.assetManager.queueSprite('chicken_idle_left', 'sprites/animals/chicken_left.png');
+        this.assetManager.queueSprite('chicken_idle_right', 'sprites/animals/chicken_right.png');
+        
+        // Sheep sprites - all directions
+        this.assetManager.queueSprite('sheep_idle_down', 'sprites/animals/sheep_down.png');
+        this.assetManager.queueSprite('sheep_idle_up', 'sprites/animals/sheep_up.png');
+        this.assetManager.queueSprite('sheep_idle_left', 'sprites/animals/sheep_left.png');
+        this.assetManager.queueSprite('sheep_idle_right', 'sprites/animals/sheep_right.png');
+    }
+    
+    queueNPCAssets() {
+        // Farmer woman NPC - all directions
+        this.assetManager.queueSprite('npc_farmer_woman_down', 'sprites/npcs/farmer_woman_down.png');
+        this.assetManager.queueSprite('npc_farmer_woman_up', 'sprites/npcs/farmer_woman_up.png');
+        this.assetManager.queueSprite('npc_farmer_woman_left', 'sprites/npcs/farmer_woman_left.png');
+        this.assetManager.queueSprite('npc_farmer_woman_right', 'sprites/npcs/farmer_woman_right.png');
+        
+        // Additional NPCs can be added here as needed
+        this.assetManager.queueSprite('npc_merchant_down', 'sprites/npcs/merchant_down.png');
+        this.assetManager.queueSprite('npc_merchant_up', 'sprites/npcs/merchant_up.png');
+        this.assetManager.queueSprite('npc_merchant_left', 'sprites/npcs/merchant_left.png');
+        this.assetManager.queueSprite('npc_merchant_right', 'sprites/npcs/merchant_right.png');
+    }
+    
     queueEnvironmentAssets() {
         // Environment tiles
         this.assetManager.queueSprite('grass_tile', 'sprites/environment/grass.png');
@@ -54,6 +90,13 @@ export class AssetLoader {
         this.assetManager.queueSprite('tree', 'sprites/objects/tree.png');
         this.assetManager.queueSprite('rock', 'sprites/objects/rock.png');
         this.assetManager.queueSprite('fence', 'sprites/objects/fence.png');
+        
+        // Rock types
+        this.assetManager.queueSprite('rock_limestone', 'sprites/rocks/rock_large.png');
+        this.assetManager.queueSprite('rock_small_stone', 'sprites/rocks/rock_small.png');
+        this.assetManager.queueSprite('rock_iron_ore', 'sprites/rocks/rock_medium.png');
+        this.assetManager.queueSprite('rock_gold_ore', 'sprites/rocks/rock_large.png');
+        this.assetManager.queueSprite('rock_crystal_formation', 'sprites/rocks/rock_large.png');
         this.assetManager.queueSprite('house', 'sprites/buildings/house.png');
         this.assetManager.queueSprite('barn', 'sprites/buildings/barn.png');
         
@@ -68,6 +111,29 @@ export class AssetLoader {
         this.assetManager.queueSprite('watering_can', 'sprites/tools/watering_can.png');
         this.assetManager.queueSprite('axe', 'sprites/tools/axe.png');
         this.assetManager.queueSprite('pickaxe', 'sprites/tools/pickaxe.png');
+        this.assetManager.queueSprite('fishing_rod', 'sprites/tools/fishing_rod.png');
+        
+        // Fish sprites
+        this.assetManager.queueSprite('fish_bass', 'sprites/fish/fish_bass.png');
+        this.assetManager.queueSprite('fish_carp', 'sprites/fish/fish_carp.png');
+        this.assetManager.queueSprite('fish_salmon', 'sprites/fish/fish_salmon.png');
+        this.assetManager.queueSprite('fish_trout', 'sprites/fish/fish_trout.png');
+        
+        // Specific crop growth stages
+        this.assetManager.queueSprite('parsnip_seedling', 'sprites/crops/parsnip_seedling.png');
+        this.assetManager.queueSprite('parsnip_young', 'sprites/crops/parsnip_young.png');
+        this.assetManager.queueSprite('parsnip_mature', 'sprites/crops/parsnip_mature.png');
+        this.assetManager.queueSprite('parsnip_ready', 'sprites/crops/parsnip_ready.png');
+        
+        this.assetManager.queueSprite('potato_seedling', 'sprites/crops/potato_seedling.png');
+        this.assetManager.queueSprite('potato_young', 'sprites/crops/potato_young.png');
+        this.assetManager.queueSprite('potato_mature', 'sprites/crops/potato_mature.png');
+        this.assetManager.queueSprite('potato_ready', 'sprites/crops/potato_ready.png');
+        
+        this.assetManager.queueSprite('turnip_seedling', 'sprites/crops/turnip_seedling.png');
+        this.assetManager.queueSprite('turnip_young', 'sprites/crops/turnip_young.png');
+        this.assetManager.queueSprite('turnip_mature', 'sprites/crops/turnip_mature.png');
+        this.assetManager.queueSprite('turnip_ready', 'sprites/crops/turnip_ready.png');
     }
     
     queueUIAssets() {
@@ -82,6 +148,8 @@ export class AssetLoader {
         this.assetManager.queueSprite('icon_seed', 'sprites/icons/seed.png');
         this.assetManager.queueSprite('icon_crop', 'sprites/icons/crop.png');
         this.assetManager.queueSprite('icon_tool', 'sprites/icons/tool.png');
+        this.assetManager.queueSprite('icon_fish', 'sprites/icons/fish.png');
+        this.assetManager.queueSprite('icon_mineral', 'sprites/icons/mineral.png');
     }
     
     queueAudioAssets() {

@@ -108,7 +108,9 @@ export class SceneManager {
             }
             
             // Wait for any pending assets
-            await this.waitForSceneAssets(scene);
+            // TEMPORARY FIX: Skip asset waiting to debug game loop
+            console.log('DEBUG SceneManager: Skipping asset wait to test game loop');
+            // await this.waitForSceneAssets(scene);
             
             // Activate new scene
             await this.activateScene(scene, transitionData);
@@ -202,8 +204,14 @@ export class SceneManager {
     
     // Render current scene
     render(renderSystem) {
+        console.log('DEBUG SceneManager: render() called');
         if (this.currentScene && this.currentScene.isActive) {
+            console.log(`DEBUG SceneManager: Rendering scene '${this.currentScene.name}' with ${this.currentScene.entities.length} entities`);
             this.currentScene.render(renderSystem);
+        } else if (this.currentScene) {
+            console.log(`DEBUG SceneManager: Scene '${this.currentScene.name}' is not active`);
+        } else {
+            console.log('DEBUG SceneManager: No current scene to render');
         }
     }
     

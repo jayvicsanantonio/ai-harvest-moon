@@ -482,6 +482,10 @@ export class FishingSystem {
     // Render fishing UI
     renderFishingUI(renderSystem) {
         const canvas = renderSystem.canvas;
+        if (!canvas) {
+            console.warn('FishingSystem: Canvas is null, skipping fishing UI render');
+            return;
+        }
         const centerX = canvas.width / 2;
         const centerY = canvas.height / 2;
         

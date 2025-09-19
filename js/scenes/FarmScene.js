@@ -64,19 +64,19 @@ export class FarmScene extends Scene {
     }
 
     setupFarmLayout() {
-        // Create a 20x15 tile farm with TileMap system
-        const mapWidth = 20;
-        const mapHeight = 15;
+        // Create a massive 80x60 tile world (2560x1920 pixels)
+        const mapWidth = 80;
+        const mapHeight = 60;
         this.tileMap = new TileMap(mapWidth, mapHeight, 32);
         
-        // Define tile properties
+        // Define tile properties - make most tiles walkable
         this.tileMap.tileProperties.set(1, { type: 'grass', farmable: true, solid: false });
         this.tileMap.tileProperties.set(2, { type: 'dirt', farmable: true, solid: false });
         this.tileMap.tileProperties.set(3, { type: 'farmland', farmable: true, solid: false });
         this.tileMap.tileProperties.set(4, { type: 'water', farmable: false, solid: true });
-        this.tileMap.tileProperties.set(5, { type: 'stone', farmable: false, solid: true });
-        this.tileMap.tileProperties.set(10, { type: 'tree', farmable: false, solid: true });
-        this.tileMap.tileProperties.set(11, { type: 'rock', farmable: false, solid: true });
+        this.tileMap.tileProperties.set(5, { type: 'stone', farmable: false, solid: false }); // Make stones walkable
+        this.tileMap.tileProperties.set(10, { type: 'tree', farmable: false, solid: false }); // Make trees walkable
+        this.tileMap.tileProperties.set(11, { type: 'rock', farmable: false, solid: false }); // Make rocks walkable
         this.tileMap.tileProperties.set(12, { type: 'fence', farmable: false, solid: true });
         
         // Create basic farm layout
@@ -93,17 +93,8 @@ export class FarmScene extends Scene {
             }
         }
         
-        // Add farmable area in the center
-        const farmStartX = 3;
-        const farmEndX = 16;
-        const farmStartY = 6;
-        const farmEndY = 11;
-        
-        for (let y = farmStartY; y <= farmEndY; y++) {
-            for (let x = farmStartX; x <= farmEndX; x++) {
-                this.tileMap.setTile(x, y, 2, 'objects'); // Dirt tile for farmable area
-            }
-        }
+        // Create multiple large farmable zones across the world
+        this.createFarmableZones(width, height);
         
         // Add some decorative objects
         this.addFarmDecorations(width, height);
@@ -111,15 +102,51 @@ export class FarmScene extends Scene {
         // Add water feature
         this.addWaterFeature(width, height);
         
-        // Create boundary with stones
-        this.addBoundaryStones(width, height);
+        // Create minimal boundary decorations (no collision)
+        this.addBoundaryDecorations(width, height);
+    }
+    
+    createFarmableZones(width, height) {
+        // Create multiple large farmable areas across the massive world
+        const farmZones = [
+            // Main central farm (starting area)
+            { startX: 35, endX: 55, startY: 25, endY: 40 },
+            // Northern farm
+            { startX: 10, endX: 30, startY: 5, endY: 20 },
+            // Eastern farm  
+            { startX: 60, endX: 75, startY: 15, endY: 30 },
+            // Southern farm
+            { startX: 20, endX: 40, startY: 45, endY: 55 },
+            // Western farm
+            { startX: 5, endX: 20, startY: 30, endY: 45 }
+        ];
+        
+        for (const zone of farmZones) {
+            for (let y = zone.startY; y <= zone.endY; y++) {
+                for (let x = zone.startX; x <= zone.endX; x++) {
+                    this.tileMap.setTile(x, y, 2, 'objects'); // Dirt tile for farmable area
+                }
+            }
+        }
     }
     
     addFarmDecorations(width, height) {
-        // Add some trees around the farm
+        // Add trees scattered across the large world
         const treePositions = [
-            {x: 1, y: 2}, {x: 4, y: 1}, {x: 17, y: 3},
-            {x: 2, y: 13}, {x: 18, y: 12}, {x: 1, y: 8}
+            // Around central farm
+            {x: 30, y: 22}, {x: 58, y: 20}, {x: 32, y: 42},
+            {x: 57, y: 43}, {x: 45, y: 18}, {x: 50, y: 45},
+            // Northern area
+            {x: 5, y: 10}, {x: 35, y: 8}, {x: 15, y: 3},
+            // Eastern area  
+            {x: 65, y: 10}, {x: 78, y: 25}, {x: 70, y: 35},
+            // Southern area
+            {x: 15, y: 50}, {x: 45, y: 58}, {x: 25, y: 48},
+            // Western area
+            {x: 2, y: 35}, {x: 8, y: 42}, {x: 12, y: 28},
+            // Random scattered trees
+            {x: 40, y: 10}, {x: 60, y: 45}, {x: 20, y: 25},
+            {x: 70, y: 50}, {x: 10, y: 40}, {x: 50, y: 10}
         ];
         
         for (const pos of treePositions) {
@@ -141,34 +168,39 @@ export class FarmScene extends Scene {
     }
     
     addWaterFeature(width, height) {
-        // Add small pond in corner
-        const pondPositions = [
-            {x: 17, y: 13}, {x: 18, y: 13}, {x: 19, y: 13},
-            {x: 17, y: 14}, {x: 18, y: 14}, {x: 19, y: 14}
+        // Add multiple water features across the large world
+        const waterFeatures = [
+            // Central pond
+            {x: 45, y: 32}, {x: 46, y: 32}, {x: 47, y: 32},
+            {x: 45, y: 33}, {x: 46, y: 33}, {x: 47, y: 33},
+            // Northern lake
+            {x: 25, y: 12}, {x: 26, y: 12}, {x: 27, y: 12}, {x: 28, y: 12},
+            {x: 25, y: 13}, {x: 26, y: 13}, {x: 27, y: 13}, {x: 28, y: 13},
+            {x: 26, y: 14}, {x: 27, y: 14},
+            // Eastern stream
+            {x: 70, y: 25}, {x: 71, y: 26}, {x: 72, y: 27},
+            // Western pond
+            {x: 12, y: 38}, {x: 13, y: 38}, {x: 12, y: 39}, {x: 13, y: 39}
         ];
         
-        for (const pos of pondPositions) {
+        for (const pos of waterFeatures) {
             if (pos.x < width && pos.y < height) {
                 this.tileMap.setTile(pos.x, pos.y, 4, 'objects'); // Water
             }
         }
     }
     
-    addBoundaryStones(width, height) {
-        // Add stone boundaries at map edges (selective placement)
-        const boundaryPositions = [
-            // Top boundary (partial)
-            {x: 0, y: 0}, {x: 3, y: 0}, {x: 7, y: 0}, {x: 12, y: 0}, {x: 19, y: 0},
-            // Bottom boundary (partial)  
-            {x: 0, y: 14}, {x: 5, y: 14}, {x: 10, y: 14}, {x: 15, y: 14},
-            // Left boundary (partial)
-            {x: 0, y: 3}, {x: 0, y: 7}, {x: 0, y: 11},
-            // Right boundary (partial)
-            {x: 19, y: 2}, {x: 19, y: 6}, {x: 19, y: 9}
+    addBoundaryDecorations(width, height) {
+        // Add minimal decorative elements (non-blocking)
+        const decorativePositions = [
+            // Corner decorations only
+            {x: 0, y: 0}, {x: width-1, y: 0}, 
+            {x: 0, y: height-1}, {x: width-1, y: height-1}
         ];
         
-        for (const pos of boundaryPositions) {
-            this.tileMap.setTile(pos.x, pos.y, 5, 'objects'); // Stone
+        for (const pos of decorativePositions) {
+            // Use rocks instead of stones for variety, but make them non-solid
+            this.tileMap.setTile(pos.x, pos.y, 11, 'objects'); // Rock
         }
     }
     
@@ -256,6 +288,139 @@ export class FarmScene extends Scene {
                 3: (entityId) => this.playFootstepSound(entityId)
             }
         });
+        
+        // Register animal animations
+        // Cow animations
+        this.engine.animationSystem.registerAnimation('cow_idle_down', {
+            frames: ['cow_idle_down'],
+            frameTime: 1000,
+            loop: true,
+            tags: ['idle', 'animal', 'cow'],
+            priority: 1
+        });
+        
+        this.engine.animationSystem.registerAnimation('cow_idle_up', {
+            frames: ['cow_idle_up'],
+            frameTime: 1000,
+            loop: true,
+            tags: ['idle', 'animal', 'cow'],
+            priority: 1
+        });
+        
+        this.engine.animationSystem.registerAnimation('cow_idle_left', {
+            frames: ['cow_idle_left'],
+            frameTime: 1000,
+            loop: true,
+            tags: ['idle', 'animal', 'cow'],
+            priority: 1
+        });
+        
+        this.engine.animationSystem.registerAnimation('cow_idle_right', {
+            frames: ['cow_idle_right'],
+            frameTime: 1000,
+            loop: true,
+            tags: ['idle', 'animal', 'cow'],
+            priority: 1
+        });
+        
+        // Chicken animations
+        this.engine.animationSystem.registerAnimation('chicken_idle_down', {
+            frames: ['chicken_idle_down'],
+            frameTime: 800,
+            loop: true,
+            tags: ['idle', 'animal', 'chicken'],
+            priority: 1
+        });
+        
+        this.engine.animationSystem.registerAnimation('chicken_idle_up', {
+            frames: ['chicken_idle_up'],
+            frameTime: 800,
+            loop: true,
+            tags: ['idle', 'animal', 'chicken'],
+            priority: 1
+        });
+        
+        this.engine.animationSystem.registerAnimation('chicken_idle_left', {
+            frames: ['chicken_idle_left'],
+            frameTime: 800,
+            loop: true,
+            tags: ['idle', 'animal', 'chicken'],
+            priority: 1
+        });
+        
+        this.engine.animationSystem.registerAnimation('chicken_idle_right', {
+            frames: ['chicken_idle_right'],
+            frameTime: 800,
+            loop: true,
+            tags: ['idle', 'animal', 'chicken'],
+            priority: 1
+        });
+        
+        // Sheep animations
+        this.engine.animationSystem.registerAnimation('sheep_idle_down', {
+            frames: ['sheep_idle_down'],
+            frameTime: 1200,
+            loop: true,
+            tags: ['idle', 'animal', 'sheep'],
+            priority: 1
+        });
+        
+        this.engine.animationSystem.registerAnimation('sheep_idle_up', {
+            frames: ['sheep_idle_up'],
+            frameTime: 1200,
+            loop: true,
+            tags: ['idle', 'animal', 'sheep'],
+            priority: 1
+        });
+        
+        this.engine.animationSystem.registerAnimation('sheep_idle_left', {
+            frames: ['sheep_idle_left'],
+            frameTime: 1200,
+            loop: true,
+            tags: ['idle', 'animal', 'sheep'],
+            priority: 1
+        });
+        
+        this.engine.animationSystem.registerAnimation('sheep_idle_right', {
+            frames: ['sheep_idle_right'],
+            frameTime: 1200,
+            loop: true,
+            tags: ['idle', 'animal', 'sheep'],
+            priority: 1
+        });
+        
+        // NPC animations
+        this.engine.animationSystem.registerAnimation('npc_farmer_woman_down', {
+            frames: ['npc_farmer_woman_down'],
+            frameTime: 1000,
+            loop: true,
+            tags: ['idle', 'npc', 'farmer'],
+            priority: 1
+        });
+        
+        this.engine.animationSystem.registerAnimation('npc_farmer_woman_up', {
+            frames: ['npc_farmer_woman_up'],
+            frameTime: 1000,
+            loop: true,
+            tags: ['idle', 'npc', 'farmer'],
+            priority: 1
+        });
+        
+        this.engine.animationSystem.registerAnimation('npc_farmer_woman_left', {
+            frames: ['npc_farmer_woman_left'],
+            frameTime: 1000,
+            loop: true,
+            tags: ['idle', 'npc', 'farmer'],
+            priority: 1
+        });
+        
+        this.engine.animationSystem.registerAnimation('npc_farmer_woman_right', {
+            frames: ['npc_farmer_woman_right'],
+            frameTime: 1000,
+            loop: true,
+            tags: ['idle', 'npc', 'farmer'],
+            priority: 1
+        });
     }
     
     // Sound event handler for footsteps
@@ -268,9 +433,9 @@ export class FarmScene extends Scene {
     }
 
     createPlayer() {
-        // Create player at center of farm in world coordinates
-        const startX = 10 * 32; // Tile 10 * tile size
-        const startY = 8 * 32;  // Tile 8 * tile size
+        // Create player at center of massive world (in main central farm)
+        const startX = 45 * 32; // Tile 45 * tile size (center of 80-tile width)  
+        const startY = 32 * 32; // Tile 32 * tile size (center of 60-tile height)
         
         this.player = new Player(startX, startY, this.engine);
         this.player.init(this.engine);
@@ -365,6 +530,15 @@ export class FarmScene extends Scene {
 
     // Override Scene's updateScene method for farm-specific updates
     updateScene(deltaTime, inputManager) {
+        // Update camera to follow player in large world
+        if (this.player && this.engine.renderSystem) {
+            this.engine.renderSystem.centerCameraOn(
+                this.player.x + this.player.width / 2,
+                this.player.y + this.player.height / 2,
+                0.1 // Smooth camera following
+            );
+        }
+        
         // Update HUD
         if (this.hud) {
             this.hud.update(deltaTime);

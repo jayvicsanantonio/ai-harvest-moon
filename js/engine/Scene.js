@@ -258,10 +258,16 @@ export class Scene {
     hasLoadingAssets() {
         if (!this.engine.assetManager) return false;
         
+        const unloadedAssets = [];
         for (const assetName of this.assets) {
             if (!this.engine.assetManager.isLoaded(assetName)) {
-                return true;
+                unloadedAssets.push(assetName);
             }
+        }
+        
+        if (unloadedAssets.length > 0) {
+            console.log(`DEBUG Scene ${this.name}: Still waiting for assets:`, unloadedAssets);
+            return true;
         }
         return false;
     }

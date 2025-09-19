@@ -64,8 +64,33 @@ export class InputManager {
     }
 
     bindEvents() {
+        // Simplified global input approach - capture keys regardless of focus
+        console.log('InputManager: Setting up global keyboard capture');
+        
+        // Remove focus requirements - capture all keyboard input globally
+        document.body.style.margin = '0';
+        document.body.style.padding = '0';
+        
+        // Ensure the page can receive keyboard events and focus it
+        document.body.tabIndex = 0;
+        document.body.focus();
+        
+        // Also ensure the canvas can receive focus
+        const canvas = document.getElementById('game-canvas');
+        if (canvas) {
+            canvas.tabIndex = 0;
+            canvas.style.outline = 'none'; // Remove focus outline
+            
+            // Focus canvas when clicked to ensure keyboard events work
+            canvas.addEventListener('click', () => {
+                canvas.focus();
+                console.log('InputManager: Canvas focused via click');
+            });
+        }
+        
         // Keyboard events
         document.addEventListener('keydown', (event) => {
+            console.log('InputManager: Key detected:', event.code, 'Active element:', document.activeElement.tagName);
             if (!this.keys.get(event.code)) {
                 this.keysPressed.set(event.code, true);
             }
@@ -162,6 +187,7 @@ export class InputManager {
     }
     
     updateActionStates() {
+        let movementKeys = [];
         for (const [key, action] of this.keyBindings) {
             const isPressed = this.keys.get(key) || false;
             const wasPressed = this.previousKeys.get(key) || false;
@@ -171,7 +197,14 @@ export class InputManager {
                 pressed: isPressed && !wasPressed,
                 released: !isPressed && wasPressed
             });
+            
+            // Track movement keys for debugging
+            if (action.startsWith('move_') && isPressed) {
+                movementKeys.push(action);
+            }
         }
+        
+        // Movement input detected successfully
         
         // Copy current keys to previous for next frame
         this.previousKeys = new Map(this.keys);
@@ -244,10 +277,25 @@ export class InputManager {
         let x = 0;
         let y = 0;
         
-        if (this.isActionHeld('move_left')) x -= 1;
-        if (this.isActionHeld('move_right')) x += 1;
-        if (this.isActionHeld('move_up')) y -= 1;
-        if (this.isActionHeld('move_down')) y += 1;
+        // Debug logging
+        const leftHeld = this.isActionHeld('move_left');
+        const rightHeld = this.isActionHeld('move_right');
+        const upHeld = this.isActionHeld('move_up');
+        const downHeld = this.isActionHeld('move_down');
+        
+        // Debug movement calculation
+        if (leftHeld || rightHeld || upHeld || downHeld) {
+            console.log('InputManager: Movement detected - Left:', leftHeld, 'Right:', rightHeld, 'Up:', upHeld, 'Down:', downHeld);
+        }
+        
+        if (leftHeld) x -= 1;
+        if (rightHeld) x += 1;
+        if (upHeld) y -= 1;
+        if (downHeld) y += 1;
+        
+        if (x !== 0 || y !== 0) {
+            console.log('InputManager: Movement vector:', { x, y });
+        }
         
         // Normalize diagonal movement
         if (x !== 0 && y !== 0) {

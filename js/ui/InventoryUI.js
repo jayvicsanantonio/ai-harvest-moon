@@ -61,6 +61,10 @@ export class InventoryUI {
         if (!this.player.gameEngine?.renderSystem) return;
         
         const canvas = this.player.gameEngine.renderSystem.canvas;
+        if (!canvas) {
+            console.warn('InventoryUI: Canvas is null, skipping layout update');
+            return;
+        }
         this.x = (canvas.width - this.width) / 2;
         this.y = (canvas.height - this.height) / 2;
     }

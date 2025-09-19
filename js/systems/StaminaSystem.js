@@ -255,6 +255,12 @@ export class StaminaSystem {
         return stamina.current / stamina.max;
     }
     
+    // Get max stamina for an entity
+    getMaxStamina(entityId) {
+        const stamina = this.entities.get(entityId);
+        return stamina ? stamina.max : 0;
+    }
+    
     // Check if entity is exhausted
     isExhausted(entityId) {
         const stamina = this.entities.get(entityId);

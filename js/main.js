@@ -67,7 +67,12 @@ class Game {
         // Register all game scenes with the SceneManager
         // For class constructors, we need to create wrapper classes
         try {
-            this.engine.sceneManager.registerScene('Farm', FarmScene);
+            console.log('Setting up scenes...');
+            
+            // Create and register the Farm scene directly 
+            const farmScene = new FarmScene();
+            this.engine.sceneManager.registerSceneInstance(farmScene);
+            
             this.engine.sceneManager.registerScene('Village', VillageScene);
             
             // For InteriorScene variants, create specific scene classes
@@ -85,19 +90,58 @@ class Game {
             this.engine.sceneManager.registerScene('Shop', ShopScene);
             this.engine.sceneManager.registerScene('Barn', BarnScene);
             
+            console.log(`Registered ${this.engine.sceneManager.getSceneCount()} scenes`);
+            
             // Start with Farm scene
             this.engine.sceneManager.transitionToScene('Farm');
             
             console.log('Scenes initialized and Farm scene loaded');
+            
+            // Start the game loop after scene is fully set up
+            console.log('DEBUG: About to call this.engine.start()');
+            console.log('DEBUG: this.engine exists:', !!this.engine);
+            console.log('DEBUG: this.engine.start exists:', !!(this.engine && this.engine.start));
+            console.log('DEBUG: this.engine.start type:', this.engine ? typeof this.engine.start : 'engine is null');
+            
+            if (this.engine && this.engine.start) {
+                console.log('DEBUG main.js: About to call this.engine.start()');
+                console.log('DEBUG main.js: this.engine exists:', !!this.engine);
+                console.log('DEBUG main.js: this.engine instanceof GameEngine:', this.engine.constructor.name);
+                console.log('DEBUG main.js: this.engine.start exists:', !!this.engine.start);
+                console.log('DEBUG main.js: this.engine.start type:', typeof this.engine.start);
+                console.log('DEBUG main.js: this.engine.start method signature:', this.engine.start.toString().substring(0, 100));
+                
+                console.log('DEBUG main.js: >>>>>> CALLING this.engine.start() <<<<<<');
+                this.engine.start();
+                console.log('DEBUG main.js: >>>>>> this.engine.start() RETURNED <<<<<<');
+            } else {
+                console.error('DEBUG main.js: Cannot call this.engine.start() - engine or start method missing');
+                console.error('DEBUG main.js: this.engine:', !!this.engine);
+                console.error('DEBUG main.js: this.engine.start:', !!(this.engine && this.engine.start));
+            }
+            console.log('Game loop started after scene initialization');
         } catch (error) {
             console.error('Failed to setup scenes:', error);
-            // Try to at least register the Farm scene
+            // Emergency fallback: create and load Farm scene directly
             try {
-                this.engine.sceneManager.registerScene('Farm', FarmScene);
+                console.log('Attempting emergency fallback...');
+                const farmScene = new FarmScene();
+                this.engine.sceneManager.registerSceneInstance(farmScene);
                 this.engine.sceneManager.transitionToScene('Farm');
-                console.log('Fallback: Farm scene loaded only');
+                console.log('Emergency fallback: Farm scene loaded');
             } catch (fallbackError) {
                 console.error('Critical: Failed to load even Farm scene:', fallbackError);
+                
+                // Last resort: set the scene directly
+                try {
+                    const farmScene = new FarmScene();
+                    farmScene.init(this.engine);
+                    this.engine.sceneManager.currentScene = farmScene;
+                    farmScene.activate();
+                    console.log('Last resort: Farm scene set directly');
+                } catch (lastResortError) {
+                    console.error('All fallbacks failed:', lastResortError);
+                }
             }
         }
     }
@@ -251,7 +295,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     
     try {
         await game.init();
-        game.start();
         clearTimeout(emergencyTimeout); // Cancel emergency timeout on success
         clearTimeout(loadingFailsafe); // Cancel failsafe timeout on success
     } catch (error) {
